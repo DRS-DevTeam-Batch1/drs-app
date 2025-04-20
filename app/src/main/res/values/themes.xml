@@ -1,5 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base application theme using Material 3 -->
+    <style name="Theme.DRSApp" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/green_primary</item>
+        <item name="colorPrimaryContainer">@color/green_container</item>
+        <item name="colorOnPrimary">@color/on_green_primary</item>
+        <item name="colorOnPrimaryContainer">@color/on_green_container</item>
 
-    <style name="Theme.DRSApp" parent="android:Theme.Material.Light.NoActionBar" />
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/blue_primary</item>
+        <item name="colorSecondaryContainer">@color/blue_container</item>
+        <item name="colorOnSecondary">@color/on_blue_primary</item>
+        <item name="colorOnSecondaryContainer">@color/on_blue_container</item>
+
+        <!-- Tertiary brand color. -->
+        <item name="colorTertiary">@color/orange_primary</item>
+        <item name="colorTertiaryContainer">@color/orange_container</item>
+        <item name="colorOnTertiary">@color/on_orange_primary</item>
+        <item name="colorOnTertiaryContainer">@color/on_orange_container</item>
+
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">@color/green_primary</item>
+
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <!-- Error colors -->
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorOnBackground">@color/on_background</item>
+    </style>
 </resources>

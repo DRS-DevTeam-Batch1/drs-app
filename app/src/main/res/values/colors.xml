@@ -1,10 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Primary colors - Green -->
+    <color name="green_primary">#4CAF50</color>
+    <color name="green_container">#C8E6C9</color>
+    <color name="on_green_primary">#FFFFFF</color>
+    <color name="on_green_container">#0C3B0F</color>
+
+    <!-- Secondary colors - Blue -->
+    <color name="blue_primary">#03A9F4</color>
+    <color name="blue_container">#B3E5FC</color>
+    <color name="on_blue_primary">#FFFFFF</color>
+    <color name="on_blue_container">#01579B</color>
+
+    <!-- Tertiary colors - Orange -->
+    <color name="orange_primary">#FF9800</color>
+    <color name="orange_container">#FFE0B2</color>
+    <color name="on_orange_primary">#FFFFFF</color>
+    <color name="on_orange_container">#E65100</color>
+
+    <!-- Error colors -->
+    <color name="error">#F44336</color>
+    <color name="on_error">#FFFFFF</color>
+
+    <!-- Neutral colors -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- Surface colors -->
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#000000</color>
+    <color name="surface_variant">#F5F5F5</color>
+    <color name="on_surface_variant">#757575</color>
+
+    <!-- Background colors -->
+    <color name="background">#F8F8F8</color>
+    <color name="on_background">#000000</color>
 </resources>
