@@ -68,7 +68,7 @@ def generate_output(input_data):
             "decision_overlay_color": "red" if final_decision == "Out" else "green"
         }
     }
-
+"""
 def main():
     with open("data/sample_input_lbw.json") as f:
         input_data = json.load(f)
