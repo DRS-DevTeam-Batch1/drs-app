@@ -8,7 +8,10 @@ def parse_input(input_data):
         "stump_coordinates": input_data.get("stump_coordinates", [])
     }
 
-def is_stump_hit(trajectory, stump_coordinates):
+
+
+
+""" def is_stump_hit(trajectory, stump_coordinates):
     # Simplified distance check with final point
     final_point = trajectory[-1]
     for stump in stump_coordinates:
@@ -65,7 +68,7 @@ def generate_output(input_data):
             "decision_overlay_color": "red" if final_decision == "Out" else "green"
         }
     }
-
+"""
 def main():
     with open("data/sample_input_lbw.json") as f:
         input_data = json.load(f)
