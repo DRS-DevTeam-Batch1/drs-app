@@ -108,7 +108,7 @@ Highlight toggles for UI
     "decisionLabel": "Out"
   }
 ```
-}
+
 🧪 Testing and Validation
 ✅ Edge Scenarios: Tested against various swing/spin angles
 
