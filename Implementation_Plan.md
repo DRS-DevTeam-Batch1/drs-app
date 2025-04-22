@@ -1,96 +1,105 @@
 # 🧠 Decision Making Module – DRS System
 
-## Overview
-The **Decision Making Module** is the core decision engine in the DRS (Decision Review System) pipeline. It gathers data from the **Trajectory Analysis**, **Bat's Edge Detection**, and **Object Tracking** modules to deliver a final verdict such as **"Out"**, **"Not Out"**, or **"Edge Detected"**. It applies cricket rules logically and precisely to ensure fair decisions and prepares the data for visual presentation.
+📌 Overview
+The Decision Making Module is the brain of the ThirdEye DRS pipeline. It consolidates data from multiple sources—Trajectory Analysis, Bat's Edge Detection, and Ball & Object Tracking—to logically determine match outcomes like:
 
----
+Out
 
-## 🔄 Position in Pipeline
+Not Out
 
-```mermaid
+Edge Detected
+
+It maps raw inputs into cricket rules, generates consistent outcomes, and prepares decision metadata for downstream visual rendering.
+
+🔄 Position in Pipeline
+mermaid
+Copy
+Edit
 graph TD
     A[Trajectory Analysis Module] --> E[Decision Making Module]
     B[Bat's Edge Detection Module] --> E
     C[Ball and Object Tracking Module] --> E
     E --> F[Stream Analysis & Overlay Module]
-
 📥 Input Data
-This module consumes structured data from multiple previous modules:
+This module consumes structured inputs in JSON from upstream modules:
 
-From Trajectory Analysis Module:
-Predicted ball path ((x, y, z) over time)
+🏏 From Trajectory Analysis Module:
+trajectory: Ball path as a list of (x, y, z) coordinates
 
-Bounce point and swing/spin metrics
+bouncePoint: Location where ball bounces
 
-Impact location (e.g., batsman’s pad)
+impactPoint: Where ball hits the pad
 
-From Bat's Edge Detection Module:
-Boolean: batEdgeDetected (true or false)
+isHittingStumps: Boolean flag
 
-Frame number of edge contact (if detected)
+pitchZone: Zone where the ball pitched (e.g., outside off)
 
-Location of edge on bat
+🏏 From Bat's Edge Detection Module:
+batEdgeDetected: true or false
 
-Adjusted trajectory (if deflected)
+contactFrame: Frame number where edge was detected
 
-From Ball & Object Tracking Module:
-Batsman’s leg position and stance
+contactZone: Region of bat where contact happened
 
-Stump coordinates and height
+🏏 From Object Tracking Module:
+bat_position: (x, y, z) of bat during swing
+
+batsman_leg_position: (x, y, z) of pad
+
+stump_coordinates: Real-world (x, y, z) coordinates of stumps
 
 ⚙️ Processing Flow
-The module performs the following steps:
+1. 🧠 Input Sync & Validation
+Frame-wise synchronization of trajectory and edge detection
 
-Edge Detection Check
+Data integrity checks for incomplete frames or missing metadata
 
-If batEdgeDetected == true, the final decision is "Edge Detected"
+2. ✨ Edge Detection First
+If batEdgeDetected == true:
 
-Trajectory analysis is skipped for LBW
+Final decision: "Edge Detected"
 
-Passes along visual marker for edge highlight
+Skips LBW checks
 
-LBW Decision Making (If No Edge)
+Highlights contact point on bat
 
-Checks if the ball hit the batsman's pad
+3. 👣 LBW Rule Evaluation
+If no edge, apply LBW conditions:
 
-Validates conditions for LBW:
+Did the ball pitch in line or outside off?
 
-Ball pitched in line or outside off
+Was the impact in line with stumps?
 
-Impact in line with stumps
+Would the ball hit the stumps?
 
-Ball would have hit the stumps
+Evaluates physics-based prediction from trajectory path
 
-Predicts result using trajectory and physics data
+4. ✅ Decision Logic Tree
+text
+Copy
+Edit
+IF Edge Detected → "Edge Detected"
+ELSE IF LBW Valid → "Out"
+ELSE → "Not Out"
+5. 🧩 Output Packaging
+Final result: "Out" / "Not Out" / "Edge Detected"
 
-Final Rule Application
+Metadata:
 
-Prioritizes Edge > LBW
+Impact and bounce points
 
-Decision outcomes:
+Decision label
 
-"Out"
+Highlight toggles for UI
 
-"Not Out"
-
-"Edge Detected"
-
-Metadata Packaging
-
-Assembles trajectory points, impact coordinates, and decision labels
-
-Builds a data object for overlay visualization
-
-📤 Output
-The module sends the following to Module 6: Stream Analysis & Overlay:
-
+📤 Output Format
 json
 Copy
 Edit
 {
   "decision": "Out",
   "dismissalType": "LBW",
-  "trajectory": [[x1,y1,z1], [x2,y2,z2], ...],
+  "trajectory": [[x1, y1, z1], [x2, y2, z2], ...],
   "impactPoint": [x, y, z],
   "bouncePoint": [x, y, z],
   "batEdgeDetected": false,
@@ -102,18 +111,10 @@ Edit
   }
 }
 🧪 Testing and Validation
-Rule engine tested on known cricket scenarios
+✅ Edge Scenarios: Tested against various swing/spin angles
 
-LBW edge cases tested against multiple ball paths
+✅ LBW Edge Cases: Pitched outside leg, missing stumps, low bounce
 
-Manual verification of overlay alignment for visual accuracy
+✅ Overlay Visuals: Manual review for alignment with ball path
 
-Debug mode supports JSON log outputs per frame
-
-🚀 Future Extensions
-Integrate confidence scoring via ML for uncertain decisions
-
-Expand support for more dismissal types (e.g., Caught, Bowled)
-
-Use real player calibration data for accuracy
-
+✅ Debug Logs: Supports per-frame logging of decisions for replays
