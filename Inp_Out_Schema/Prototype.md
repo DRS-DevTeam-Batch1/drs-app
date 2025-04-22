@@ -1,7 +1,7 @@
 
 # Trajectory Analysis Module – Input & Output Schema
 
-## 🧾 Module Overview
+##  Module Overview
 
 The **Trajectory Analysis Module** is the fourth module in the DRS (Decision Review System) pipeline. It is responsible for predicting the future path of the ball based on its current path. Once a significant portion of the ball's current path is tracked, the module predicts the future trajectory.
 
@@ -12,14 +12,14 @@ The **Trajectory Analysis Module** is the fourth module in the DRS (Decision Rev
 
 ---
 
-## 🔁 Source of Input
+##  Source of Input
 
 - **Input Source**: Ball Tracking Module  
 - The Ball’s trajectory and spin are tracked up to the current moment and passed here for prediction.
 
 ---
 
-## 📥 Input Schema
+## Input Schema
 
 Each input data point is a dictionary with:
 
@@ -30,7 +30,7 @@ Each input data point is a dictionary with:
 | z     | float | Lengthwise position (toward batsman)   |
 | t     | time  | Timestamp (optional)                   |
 
-### Example Input:
+## Example Input:
 ```json
 [
   {"x": 2.4, "y": 1.2, "z": 0.6, "t": 0.1},
@@ -40,7 +40,7 @@ Each input data point is a dictionary with:
 
 ---
 
-## 📤 Output Schema
+## Output Schema
 
 The module outputs a dictionary containing key physics-based predictions:
 
@@ -53,7 +53,7 @@ The module outputs a dictionary containing key physics-based predictions:
 
 ---
 
-### 📦 Output Examples
+### Output Examples
 
 #### Example 1:
 ```json
@@ -96,28 +96,3 @@ The module outputs a dictionary containing key physics-based predictions:
 
 ---
 
-## 🔌 Module Interface (Exposed Functions)
-
-This module only exposes two external functions to the system. All other functions are internal and are not accessible outside.
-
-### `receive_ball_data(data: List[Dict[str, float]]) -> None`
-Receives ball tracking data from the Ball Tracking Module.
-
-### `get_trajectory_analysis() -> Dict`
-Returns:
-- Predicted ball path
-- Bounce point
-- Impact location
-- Swing type
-
-```python
-def receive_ball_data(data: List[Dict[str, float]]) -> None:
-    """ Receives input ball trajectory data. """
-    pass
-
-def get_trajectory_analysis() -> Dict[str, object]:
-    """ Returns final predicted trajectory analysis. """
-    pass
-```
-
----
