@@ -1,18 +1,18 @@
-# 🧠 Decision Making Module - DRS System
+# 🧠 LBW Decision Making Logic Module - DRS System
 
-Welcome to the **Decision Making Module** of the Cricket DRS (Decision Review System) Project! This module analyzes bat contact, predicted trajectory, and player/stump positions to determine the final umpiring decision. 🏏
+Welcome to the **Decision Making Logic Module** of the ThirdEyeDRS Project! This module analyzes bat contact, predicted trajectory, and player/stump positions to determine the final umpiring decision. 🏏
 
 ---
 
 ## 📌 Overview
 
-The Decision Making Module consolidates inputs from multiple upstream modules to render a final decision (Out, Not Out, Edge Detected) based on cricket rules and trajectory analysis.
+The Decision Making Module consolidates inputs from multiple upstream modules to render a final decision (Out, Not Out, Edge Detected, Decision Overturned/Upheld) based on the cricket rules and trajectory analysis.
 
 ---
 
 ## 🛠 Inputs
 
-This module receives structured data from previous stages:
+This module receives structured data from previous stages, the trajectory analysis module 4:
 
 - 🔄 **Bat Edge Detection Module**
   - `bat_contact: bool`
