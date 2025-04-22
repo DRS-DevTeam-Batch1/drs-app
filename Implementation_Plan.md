@@ -12,14 +12,12 @@ Edge Detected
 It maps raw inputs into cricket rules, generates consistent outcomes, and prepares decision metadata for downstream visual rendering.
 
 🔄 Position in Pipeline
-mermaid
-Copy
-Edit
 graph TD
     A[Trajectory Analysis Module] --> E[Decision Making Module]
     B[Bat's Edge Detection Module] --> E
     C[Ball and Object Tracking Module] --> E
     E --> F[Stream Analysis & Overlay Module]
+
 📥 Input Data
 This module consumes structured inputs in JSON from upstream modules:
 
@@ -75,9 +73,6 @@ Would the ball hit the stumps?
 Evaluates physics-based prediction from trajectory path
 
 4. ✅ Decision Logic Tree
-text
-Copy
-Edit
 IF Edge Detected → "Edge Detected"
 ELSE IF LBW Valid → "Out"
 ELSE → "Not Out"
@@ -93,9 +88,6 @@ Decision label
 Highlight toggles for UI
 
 📤 Output Format
-json
-Copy
-Edit
 {
   "decision": "Out",
   "dismissalType": "LBW",
