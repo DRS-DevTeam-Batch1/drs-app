@@ -12,8 +12,6 @@ Edge Detected
 It maps raw inputs into cricket rules, generates consistent outcomes, and prepares decision metadata for downstream visual rendering.
 
 🔄 Position in Pipeline
-
-graph TD
     
     A[Trajectory Analysis Module] --> E[Decision Making Module]
     
