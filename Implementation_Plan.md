@@ -1,7 +1,6 @@
 # 🧠 Decision Making Module – DRS System
 
-📌 Overview
-The Decision Making Module is the brain of the ThirdEye DRS pipeline. It consolidates data from multiple sources—Trajectory Analysis, Bat's Edge Detection, and Ball & Object Tracking—to logically determine match outcomes like:
+The Decision Making Module serves as the core logic engine of the ThirdEye DRS pipeline. It integrates data from multiple upstream modules—Trajectory Analysis, Bat Edge Detection, and Ball & Object Tracking—to logically determine match outcomes such as:
 
 Out
 
@@ -9,89 +8,85 @@ Not Out
 
 Edge Detected
 
-It maps raw inputs into cricket rules, generates consistent outcomes, and prepares decision metadata for downstream visual rendering.
+This module maps structured inputs to cricket rules, applies decision logic, and prepares output metadata for downstream rendering during live or replay broadcasts.
 
-🔄 Position in Pipeline
-    
-    A[Trajectory Analysis Module] --> E[Decision Making Module]
-    
-    B[Bat's Edge Detection Module] --> E
-    
-    C[Ball and Object Tracking Module] --> E
-    
-    E --> F[Stream Analysis & Overlay Module]
-
+🔄 Position in the Pipeline
+mermaid
+Copy
+Edit
+graph TD
+  A[Trajectory Analysis Module] --> E[Decision Making Module]
+  B[Bat's Edge Detection Module] --> E
+  C[Ball & Object Tracking Module] --> E
+  E --> F[Stream Analysis & Overlay Module]
 📥 Input Data
-This module consumes structured inputs in JSON from upstream modules:
+The module consumes structured JSON inputs from upstream modules:
 
-🏏 From Trajectory Analysis Module:
+🏏 From Trajectory Analysis Module
 trajectory: Ball path as a list of (x, y, z) coordinates
 
-bouncePoint: Location where ball bounces
+bouncePoint: Location where the ball bounces
 
-impactPoint: Where ball hits the pad
+impactPoint: Location where the ball hits the pad
 
-isHittingStumps: Boolean flag
+isHittingStumps: Boolean flag indicating whether the ball will hit the stumps
 
-pitchZone: Zone where the ball pitched (e.g., outside off)
+pitchZone: Area where the ball pitched (e.g., outside off, in-line)
 
-🏏 From Bat's Edge Detection Module:
+🏏 From Bat Edge Detection Module
 batEdgeDetected: true or false
 
-contactFrame: Frame number where edge was detected
+contactFrame: Frame number where the bat edge was detected
 
-contactZone: Region of bat where contact happened
+contactZone: Region on the bat where contact was detected
 
-🏏 From Object Tracking Module:
-bat_position: (x, y, z) of bat during swing
+🏏 From Object Tracking Module
+bat_position: (x, y, z) of the bat during the swing
 
-batsman_leg_position: (x, y, z) of pad
+batsman_leg_position: (x, y, z) position of the batsman's leg/pad
 
-stump_coordinates: Real-world (x, y, z) coordinates of stumps
+stump_coordinates: Real-world (x, y, z) coordinates of the stumps
 
 ⚙️ Processing Flow
-1. 🧠 Input Sync & Validation
-Frame-wise synchronization of trajectory and edge detection
+🧠 1. Input Sync & Validation
+Synchronizes data across modules on a per-frame basis
 
-Data integrity checks for incomplete frames or missing metadata
+Validates input integrity and checks for any missing or malformed metadata
 
-2. ✨ Edge Detection First
+✨ 2. Edge Detection First
 If batEdgeDetected == true:
 
-Final decision: "Edge Detected"
+The decision is immediately set to "Edge Detected"
 
-Skips LBW checks
+LBW evaluation is skipped
 
-Highlights contact point on bat
+Contact point on the bat is highlighted in the output
 
-3. 👣 LBW Rule Evaluation
-If no edge, apply LBW conditions:
+👣 3. LBW Rule Evaluation (If No Edge)
+If no edge is detected, LBW conditions are evaluated:
 
 Did the ball pitch in line or outside off?
 
-Was the impact in line with stumps?
+Was the impact in line with the stumps?
 
-Would the ball hit the stumps?
+Is the ball predicted to hit the stumps?
 
-Evaluates physics-based prediction from trajectory path
+This uses physics-based modeling from the trajectory data to evaluate the dismissal validity.
 
-4. ✅ Decision Logic Tree
-IF Edge Detected → "Edge Detected"
+✅ Decision Logic Tree
+pgsql
+Copy
+Edit
+IF batEdgeDetected → "Edge Detected"
 ELSE IF LBW Valid → "Out"
 ELSE → "Not Out"
-5. 🧩 Output Packaging
-Final result: "Out" / "Not Out" / "Edge Detected"
-
-Metadata:
-
-Impact and bounce points
-
-Decision label
-
-Highlight toggles for UI
+🧩 Output Packaging
+The final result is structured and returned as JSON with both the decision and supporting metadata.
 
 📤 Output Format
-```
+json
+Copy
+Edit
 {
   "decision": "Out",
   "dismissalType": "LBW",
@@ -105,13 +100,13 @@ Highlight toggles for UI
     "stumpProjection": true,
     "decisionLabel": "Out"
   }
-```
-
+}
 🧪 Testing and Validation
-✅ Edge Scenarios: Tested against various swing/spin angles
+✅ Edge Scenarios: Validated with various spin and swing angles
 
-✅ LBW Edge Cases: Pitched outside leg, missing stumps, low bounce
+✅ LBW Edge Cases: Includes testing for edge situations like pitching outside leg, missing stumps, and low bounce
 
-✅ Overlay Visuals: Manual review for alignment with ball path
+✅ Overlay Visuals: Manually reviewed to confirm alignment with ball trajectory
 
-✅ Debug Logs: Supports per-frame logging of decisions for replays
+✅ Debug Logs: Frame-level logs maintained to support replay validation and debugging
+
