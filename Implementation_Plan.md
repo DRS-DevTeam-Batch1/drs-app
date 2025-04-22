@@ -12,10 +12,15 @@ Edge Detected
 It maps raw inputs into cricket rules, generates consistent outcomes, and prepares decision metadata for downstream visual rendering.
 
 🔄 Position in Pipeline
+
 graph TD
+    
     A[Trajectory Analysis Module] --> E[Decision Making Module]
+    
     B[Bat's Edge Detection Module] --> E
+    
     C[Ball and Object Tracking Module] --> E
+    
     E --> F[Stream Analysis & Overlay Module]
 
 📥 Input Data
