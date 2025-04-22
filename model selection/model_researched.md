@@ -92,3 +92,88 @@ Lastly, we experimented with a hybrid model. Here, LSTM learns the pattern from 
 ### Cons:
 - More complex to implement than just using LSTM alone.
 - Needs tuning of physics-related variables like drag, bounce angle, and spin.
+
+## Some additional models
+
+## 8. Multivariate Linear Regression (MLR)
+
+MLR fits a linear equation between multiple input features (e.g., time, x, y, z positions) and the target output.
+
+**Pros:**  
+- Very simple and interpretable  
+-  fast to train and test  
+- Works decently when ball motion is fairly linear
+
+**Cons:**  
+- Cannot model non-linear behaviors like bounce or swing  
+
+## 9. Polynomial Regression
+
+This extends linear regression by introducing polynomial terms to better fit curved data patterns.
+
+**Pros:**  
+- Can capture simple non-linear motion  
+- Easy to implement
+
+**Cons:**   
+- Risk of overfitting with high-degree polynomials espescially since our dataset might not be large
+
+
+## 10. Convolutional Neural Networks (CNNs)
+
+ 1D CNNs to learn local patterns in the ball's motion trajectory.
+
+**Pros:**  
+- Captures local variations (e.g., bounce, dip)  
+- Efficient training and inference  
+- Less likely to overfit than fully connected networks
+
+**Cons:**  
+- Not good at learning long-term dependencies  
+
+## 11. Gaussian Process Regression (GPR)
+
+GPR is a non-parametric regression method that provides uncertainty estimates along with predictions.
+
+**Pros:**  
+- Works well with small datasets  
+- Provides smooth and continuous predictions  
+- Includes uncertainty quantification
+
+**Cons:**  
+- Not scalable to large datasets (but might work in our case)
+- Computationally expensive (but other models with high accuracy are same)
+
+ ## Final Shortlisted Models
+
+We shortlist a few models based on prediction quality, physics accuracy, implementation difficulty, and data availability.
+
+### 1. Hybrid LSTM + Physics Model
+
+This approach combines LSTM-based sequence learning with physics-based equations (gravity, drag, bounce, spin).
+
+**Why:**  
+- Captures time and real-world behavior  
+- Can handle moderate-sized datasets effectively  
+- Produces physically plausible bounce and spin
+
+### 2. Kalman Filter
+
+A probabilistic model that updates its predictions using noise models and physics equations.
+
+**Why:**  
+- Fast and lightweight  
+- Very effective on smooth and noisy data (real world scenario like our case)
+- No training required, can work in real-time
+
+### 3. Physics-Informed Neural Networks (PINNs)
+
+PINNs combine machine learning with physical laws during training to enforce physically consistent outputs.
+
+**Why we selected it:**  
+- Ensures predictions follow known physical laws  
+- Produce more realistic results  
+- Performs with limited data
+
+  ### Note:
+  Due to our limited data availablity (coordinates) and optional timestamps, we might have to consider stepping back from above advanced models and instead use Polynomial or Gaussian Regression. It will depend as we make progress in this project.
