@@ -93,6 +93,7 @@ Decision label
 Highlight toggles for UI
 
 📤 Output Format
+```
 {
   "decision": "Out",
   "dismissalType": "LBW",
@@ -106,6 +107,7 @@ Highlight toggles for UI
     "stumpProjection": true,
     "decisionLabel": "Out"
   }
+```
 }
 🧪 Testing and Validation
 ✅ Edge Scenarios: Tested against various swing/spin angles
