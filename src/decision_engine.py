@@ -9,32 +9,31 @@ def parse_input(input_data):
     }
 
 
-
-
-""" def is_stump_hit(trajectory, stump_coordinates):
-    # Simplified distance check with final point
+def is_stump_hit(trajectory, stump_coordinates):
+    # Euclidean distance
     final_point = trajectory[-1]
     for stump in stump_coordinates:
         distance = ((final_point["x"] - stump["x"]) ** 2 +
                     (final_point["y"] - stump["y"]) ** 2 +
                     (final_point["z"] - stump["z"]) ** 2) ** 0.5
-        if distance < 0.15:  # threshold distance to consider it hitting stump
+        if distance < 0.15:  # threshold distance
             return True, stump
     return False, stump_coordinates[0] if stump_coordinates else {}
 
 def detect_lbw(trajectory, batsman_leg_position, stump_coordinates):
     if not trajectory or not batsman_leg_position or not stump_coordinates:
         return False
-    return True  # Assume LBW conditions are valid for mock
+    return True 
+
 
 def generate_output(input_data):
     trajectory = input_data["ball_trajectory"]
     stump_hit, closest_stump = is_stump_hit(trajectory, input_data["stump_coordinates"])
 
     ball_contact = {
-        "with_bat": False,  # No edge detection here
-        "with_leg": True,   # Assume it hit the pad 
-        "edge_detected": False
+        "with_bat": input_data.get("edge_detection", {}).get("batEdgeDetected", False),
+        "with_leg": True,
+        "edge_detected": input_data.get("edge_detection", {}).get("batEdgeDetected", False)
     }
 
     if ball_contact["edge_detected"]:
@@ -55,6 +54,7 @@ def generate_output(input_data):
         "timestamp": input_data.get("timestamp"),
         "final_decision": final_decision,
         "decision_reason": decision_reason,
+        "impact_point": input_data.get("impact_point"),
         "trajectory_summary": {
             "initial_point": trajectory[0] if trajectory else {},
             "final_point": trajectory[-1] if trajectory else {},
@@ -64,21 +64,23 @@ def generate_output(input_data):
         "ball_contact": ball_contact,
         "visual_decision": {
             "highlight_path": True,
+            "highlight_impact": True,
             "highlight_miss_zone": not stump_hit,
             "decision_overlay_color": "red" if final_decision == "Out" else "green"
         }
     }
-"""
-def main():
-    with open("data/sample_input_lbw.json") as f:
+
+def main(file):
+    with open(file) as f:
         input_data = json.load(f)
 
     parsed = parse_input(input_data)
     result = generate_output(input_data)
 
-    with open("data/sample_output.json", "w") as f:
+    with open(f"{file}.output", "w") as f:
         json.dump(result, f, indent=4)
     print("Decision:", result["final_decision"])
 
 if __name__ == "__main__":
-    main()
+    main("data/sample_input_lbw_out.json")
+    main("data/sample_input_lbw_not_out.json")
