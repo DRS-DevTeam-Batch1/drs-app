@@ -1,0 +1,37 @@
+{
+    "timestamp": null,
+    "final_decision": "Not Out",
+    "decision_reason": "Ball missing the stumps",
+    "impact_point": null,
+    "trajectory_summary": {
+        "initial_point": {
+            "x": 2.5,
+            "y": 1.2,
+            "z": 0.6,
+            "t": 0.0
+        },
+        "final_point": {
+            "x": 1.3,
+            "y": 0.4,
+            "z": 0.2,
+            "t": 0.2
+        },
+        "closest_to_stumps": {
+            "x": 1.0,
+            "y": 0.4,
+            "z": 0.0
+        },
+        "stump_hit_prediction": false
+    },
+    "ball_contact": {
+        "with_bat": false,
+        "with_leg": true,
+        "edge_detected": false
+    },
+    "visual_decision": {
+        "highlight_path": true,
+        "highlight_impact": true,
+        "highlight_miss_zone": true,
+        "decision_overlay_color": "green"
+    }
+}

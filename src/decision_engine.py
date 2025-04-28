@@ -74,4 +74,5 @@ def main():
     print("Decision:", result.final_decision)
 
 if __name__ == "__main__":
-    main()
+    main("data/sample_input_lbw_out.json")
+    main("data/sample_input_lbw_not_out.json")
