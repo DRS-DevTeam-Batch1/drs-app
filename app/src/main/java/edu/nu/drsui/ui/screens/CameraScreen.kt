@@ -1,5 +1,31 @@
-package edu.nu.drsui.ui.screens
+package edu.nu.drsui.ui.screenscmab
 
+import androidx.camera.video.Quality
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.Recording
+
+
+// Your Imports
+import android.widget.Toast
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.platform.LocalContext
+import edu.nu.drsui.network.RetrofitClient
+import edu.nu.drsui.network.VideoUploadApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.HttpException
+import java.io.File
+
+// Other Android & Jetpack Compose Imports
 import android.content.Context
 import android.util.Log
 import androidx.camera.core.CameraSelector
@@ -8,46 +34,18 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lens
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,7 +54,7 @@ import androidx.core.content.ContextCompat
 import edu.nu.drsui.model.Ball
 import edu.nu.drsui.model.CaptureAngle
 import edu.nu.drsui.ui.components.BallList
-import java.util.concurrent.Executor
+import okhttp3.RequestBody.Companion.asRequestBody
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -66,16 +64,20 @@ fun CameraScreen(
     hasCameraPermission: Boolean,
     onNavigateToSettings: () -> Unit
 ) {
+    var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
+    var recording by remember { mutableStateOf<Recording?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
 
     var isRecording by remember { mutableStateOf(false) }
     var overNumber by remember { mutableStateOf(1) }
+    var ballNumberText by remember { mutableStateOf("1") }
     var ballNumber by remember { mutableStateOf(1) }
     var selectedAngle by remember { mutableStateOf(CaptureAngle.FRONT) }
     var isAngleDropdownExpanded by remember { mutableStateOf(false) }
 
-    // Simulate a list of recorded balls
     var recordedBalls by remember {
         mutableStateOf(listOf<Ball>())
     }
@@ -85,7 +87,7 @@ fun CameraScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Top bar with settings
+        // Top Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,7 +108,7 @@ fun CameraScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Camera preview
+        // Camera Preview
         if (hasCameraPermission) {
             Box(
                 modifier = Modifier
@@ -120,10 +122,12 @@ fun CameraScreen(
                     )
             ) {
                 CameraPreview(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    onVideoCaptureReady = { capture ->
+                        videoCapture = capture
+                    }
                 )
 
-                // Recording indicator
                 if (isRecording) {
                     Row(
                         modifier = Modifier
@@ -150,30 +154,60 @@ fun CameraScreen(
                     }
                 }
 
-                // Capture button
                 FloatingActionButton(
                     onClick = {
-                        isRecording = !isRecording
-
-                        // If stopping recording, add a new ball to the list
-                        if (!isRecording) {
-                            val newBall = Ball(
-                                id = recordedBalls.size + 1,
-                                overNumber = overNumber,
-                                ballNumber = ballNumber,
-                                captureAngle = selectedAngle,
-                                timestamp = System.currentTimeMillis()
-                            )
-
-                            // Add to list and increment ball number
-                            recordedBalls = (recordedBalls + newBall).takeLast(6)
-
-                            // Increment ball number or reset and increment over
-                            if (ballNumber < 6) {
-                                ballNumber++
+                        val vc = videoCapture
+                        if (vc != null) {
+                            if (recording != null) {
+                                recording?.stop()
+                                recording = null
+                                isRecording = false
                             } else {
-                                ballNumber = 1
-                                overNumber++
+                                val videoDir = File(context.filesDir, "Videos")
+                                if (!videoDir.exists()) {
+                                    videoDir.mkdirs()
+                                }
+
+                                val outputFile = File(videoDir, "ball_${recordedBalls.size + 1}.mp4")
+                                val outputOptions = FileOutputOptions.Builder(outputFile).build()
+
+                                val newRecording = vc.output
+                                    .prepareRecording(context, outputOptions) // Only if you want audio
+                                    .start(ContextCompat.getMainExecutor(context)) { recordEvent ->
+                                        when (recordEvent) {
+                                            is VideoRecordEvent.Start -> {
+                                                isRecording = true
+                                            }
+                                            is VideoRecordEvent.Finalize -> {
+                                                if (!recordEvent.hasError()) {
+                                                    Log.d("Recording", "Video saved successfully: ${outputFile.absolutePath}")
+                                                } else {
+                                                    Log.e("Recording", "Video capture failed: ${recordEvent.error}")
+                                                }
+                                                recording = null
+                                                isRecording = false
+                                            }
+                                        }
+                                    }
+
+                                recording = newRecording
+
+                                val newBall = Ball(
+                                    id = recordedBalls.size + 1,
+                                    overNumber = overNumber,
+                                    ballNumber = ballNumber,
+                                    captureAngle = selectedAngle,
+                                    timestamp = System.currentTimeMillis()
+                                )
+
+                                recordedBalls = (recordedBalls + newBall).takeLast(6)
+
+                                if (ballNumber < 6) {
+                                    ballNumber++
+                                } else {
+                                    ballNumber = 1
+                                    overNumber++
+                                }
                             }
                         }
                     },
@@ -207,7 +241,7 @@ fun CameraScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Controls section
+        // Controls and Upload Button
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -221,7 +255,6 @@ fun CameraScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                // Over and ball number controls
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -236,16 +269,26 @@ fun CameraScreen(
                     )
 
                     OutlinedTextField(
-                        value = ballNumber.toString(),
-                        onValueChange = {
-                            ballNumber = it.toIntOrNull()?.coerceIn(1, 6) ?: ballNumber
+                        value = ballNumberText,
+                        onValueChange = { newText ->
+                            // Allow only digits
+                            if (newText.all { it.isDigit() }) {
+                                val number = newText.toIntOrNull()
+                                if (number != null && number in 1..6) {
+                                    ballNumberText = newText
+                                    ballNumber = number
+                                } else if (newText.isEmpty()) {
+                                    ballNumberText = ""
+                                }
+                                // Else do nothing (if >6 or invalid)
+                            }
+                            // Else ignore the non-digit typing
                         },
                         label = { Text("Ball") },
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                // Capture angle dropdown
                 Box {
                     OutlinedTextField(
                         value = selectedAngle.displayName,
@@ -279,30 +322,51 @@ fun CameraScreen(
                     }
                 }
 
-                // Send to server button
                 Button(
-                    onClick = { /* TODO: Implement sending to server */ },
+                    onClick = {
+                        if (recordedBalls.isNotEmpty()) {
+                            val latestBall = recordedBalls.last()
+                            val videoFilePath = context.filesDir.absolutePath + "/Videos/ball_${latestBall.id}.mp4"
+
+                            coroutineScope.launch {
+                                isUploading = true
+                                uploadVideo(videoFilePath, context) {
+                                    isUploading = false
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = recordedBalls.isNotEmpty()
+                    enabled = recordedBalls.isNotEmpty() && !isUploading
                 ) {
-                    Text("Send Latest Ball to Server")
+                    Text(if (isUploading) "Uploading..." else "Send Latest Ball to Server")
+                }
+
+                if (isUploading) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Recorded balls list
         BallList(
             balls = recordedBalls,
-            onBallSelected = { /* TODO: Implement ball selection */ }
+            onBallSelected = { /* Optional */ }
         )
     }
 }
 
 @Composable
 fun CameraPreview(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onVideoCaptureReady: (VideoCapture<Recorder>) -> Unit // ⭐ New
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -313,28 +377,35 @@ fun CameraPreview(
         val cameraProvider = context.getCameraProvider()
         val preview = Preview.Builder().build()
 
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .build()
+
+        val videoCapture = VideoCapture.withOutput(recorder)
+
         val cameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
-
-        preview.setSurfaceProvider(previewView.surfaceProvider)
 
         try {
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
-                preview
+                preview,
+                videoCapture
             )
+
+            preview.setSurfaceProvider(previewView.surfaceProvider)
+
+            onVideoCaptureReady(videoCapture) // ⭐ Pass it back
         } catch (e: Exception) {
             Log.e("CameraPreview", "Use case binding failed", e)
         }
     }
 
     DisposableEffect(Unit) {
-        onDispose {
-            // Clean up camera resources if needed
-        }
+        onDispose { }
     }
 
     AndroidView(
@@ -346,10 +417,36 @@ fun CameraPreview(
 suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
     ProcessCameraProvider.getInstance(this).also { future ->
         future.addListener(
-            {
-                continuation.resume(future.get())
-            },
+            { continuation.resume(future.get()) },
             ContextCompat.getMainExecutor(this)
         )
+    }
+}
+suspend fun uploadVideo(filePath: String, context: Context, onComplete: () -> Unit) {
+    try {
+        val file = File(filePath)
+        val requestFile = file.asRequestBody("video/mp4".toMediaTypeOrNull())
+        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        val api = RetrofitClient.retrofit.create(VideoUploadApi::class.java)
+
+        val response = withContext(Dispatchers.IO) {
+            api.uploadVideo(body)
+        }
+
+        if (response.isSuccessful) {
+            Toast.makeText(context, "Video uploaded successfully!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Upload failed: ${response.code()}", Toast.LENGTH_SHORT).show()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        if (e is HttpException) {
+            Toast.makeText(context, "Server error: ${e.code()}", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Upload failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    } finally {
+        onComplete()
     }
 }

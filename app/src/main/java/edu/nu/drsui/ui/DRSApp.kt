@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import edu.nu.drsui.ui.screens.CameraScreen
+import edu.nu.drsui.ui.screenscmab.CameraScreen
 import edu.nu.drsui.ui.screens.SettingsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)

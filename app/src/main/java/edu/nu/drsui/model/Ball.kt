@@ -11,5 +11,5 @@ data class Ball(
 
 enum class CaptureAngle(val displayName: String) {
     FRONT("Front"),
-    LEGSIDE("Leg Side"),
+
 }
