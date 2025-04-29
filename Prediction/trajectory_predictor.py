@@ -85,7 +85,7 @@ class DataProcessor:
 
 
 # Example of how to use this class
-if _name_ == "_main_":
+if __name__ == "_main_":
     processor = DataProcessor()
     
     # Load and process raw data file
