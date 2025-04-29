@@ -61,18 +61,17 @@ def process_decision(input_data: LBWInput) -> LBWOutput:
         visual_decision=visual_decision
     )
 
-def main():
-    with open("data/sample_input_lbw.json") as f:
+def process_decision(input_file_name, output_file_name):
+    with open(input_file_name) as f:
         input_json = json.load(f)
-    
+
     input_data = LBWInput.model_validate(input_json)
     result = process_decision(input_data)
-    
-    with open("data/sample_output.json", "w") as f:
+    with open(output_file_name, "w") as f:
         json.dump(result.model_dump(), f, indent=4)
-    
+
     print("Decision:", result.final_decision)
 
 if __name__ == "__main__":
-    main("data/sample_input_lbw_out.json")
-    main("data/sample_input_lbw_not_out.json")
+    process_decision("data/sample_input_lbw_out.json", "data/sample_output_lbw_out.json")
+    process_decision("data/sample_input_lbw_not_out.json", "data/sample_output_lbw_not_out.json")
