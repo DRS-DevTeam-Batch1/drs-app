@@ -1,0 +1,86 @@
+import json
+import argparse
+import sys
+from typing import List, Dict, Any, Optional
+from trajectory_predictor import TrajectoryPredictor
+
+
+class TrajectoryHandler:
+    def _init_(self, model_file: str = "trajectory_regressor.pkl", 
+                 pitch_length: float = 20.12,
+                 input_points: int = 5,
+                 output_points: int = 10):
+        self.predictor = TrajectoryPredictor(
+            model_file=model_file,
+            pitch_length=pitch_length,
+            input_points=input_points,
+            output_points=output_points
+        )
+    
+    def process_trajectory_data(self, input_data: List[Dict[str, float]]) -> Dict[str, Any]:
+        return self.predictor.analyze_trajectory(input_data)
+    
+    def save_output_json(self, result: Dict[str, Any], output_file: str) -> None:
+        try:
+            with open(output_file, 'w') as f:
+                json.dump(result, f, indent=4)
+            print(f"Results saved to {output_file}")
+        except Exception as e:
+            print(f"Error saving results: {e}")
+    
+    def load_input_json(self, input_file: str) -> Optional[List[Dict[str, float]]]:
+        try:
+            with open(input_file, 'r') as f:
+                data = json.load(f)
+            if not isinstance(data, list):
+                print("Error: Input JSON must contain a list of points")
+                return None
+            for point in data:
+                if not all(key in point for key in ['x', 'y', 'z', 't']):
+                    print("Error: Missing required keys in trajectory point")
+                    return None
+            return data
+        except Exception as e:
+            print(f"Error loading input file: {e}")
+            return None
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Trajectory prediction')
+    parser.add_argument('--input', '-i', type=str, help='Input JSON file')
+    parser.add_argument('--output', '-o', type=str, default='trajectory_results.json', help='Output JSON file')
+    parser.add_argument('--model', '-m', type=str, default='trajectory_regressor.pkl', help='Model file path')
+    parser.add_argument('--pitch-length', '-p', type=float, default=20.12, help='Pitch length in meters')
+    
+    args = parser.parse_args()
+    
+    if not args.input:
+        print("Error: Input file is required")
+        parser.print_help()
+        sys.exit(1)
+    
+    handler = TrajectoryHandler(
+        model_file=args.model,
+        pitch_length=args.pitch_length
+    )
+    
+    input_data = handler.load_input_json(args.input)
+    if not input_data:
+        sys.exit(1)
+    
+    results = handler.process_trajectory_data(input_data)
+    handler.save_output_json(results, args.output)
+
+
+def analyze_trajectory_from_data(input_data: List[Dict[str, float]], 
+                                 model_file: str = "trajectory_regressor.pkl",
+                                 output_file: Optional[str] = None) -> Dict[str, Any]:
+    handler = TrajectoryHandler(model_file=model_file)
+    results = handler.process_trajectory_data(input_data)
+    if output_file:
+        handler.save_output_json(results, output_file)
+    return results
+
+
+if _name_ == "_main_":
+    main()
