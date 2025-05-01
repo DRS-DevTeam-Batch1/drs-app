@@ -1,41 +1,40 @@
 {
-    "timestamp": "2025-04-22T14:32:00Z",
-    "ball_trajectory": [
-      { "x": 2.5, "y": 1.2, "z": 0.6, "t": 0.00 },
-      { "x": 2.2, "y": 1.0, "z": 0.5, "t": 0.05 },
-      { "x": 1.9, "y": 0.8, "z": 0.4, "t": 0.10 },
-      { "x": 1.6, "y": 0.6, "z": 0.3, "t": 0.15 },
-      { "x": 1.02, "y": 0.42, "z": 0.05, "t": 0.20 }
-    ],
-    "bounce_point": {
-      "x": 2.2,
-      "y": 1.0,
-      "z": 0.0
-    },
-    "impact_point": {
-      "x": 1.1,
-      "y": 0.4,
-      "z": 0.2
-    },
-    "bat_position": {
-      "x": 1.4,
-      "y": 0.5,
-      "z": 0.3
-    },
-    "batsman_leg_position": {
-      "x": 1.05,
-      "y": 0.45,
-      "z": 0.25
-    },
-    "stump_coordinates": [
-      { "x": 1.0, "y": 0.4, "z": 0.0 },
-      { "x": 1.02, "y": 0.42, "z": 0.0 },
-      { "x": 1.04, "y": 0.41, "z": 0.0 }
-    ],
-    "edge_detection": {
-      "batEdgeDetected": false,
-      "contactFrame": null,
-      "contactZone": null
-    }
+  "timestamp": "2025-04-22T14:32:00Z",
+  "ball_trajectory": [
+    { "x": 2.5, "y": 1.2, "z": 0.6, "t": 0.00 },
+    { "x": 2.2, "y": 1.0, "z": 0.5, "t": 0.05 },
+    { "x": 1.9, "y": 0.8, "z": 0.4, "t": 0.10 },
+    { "x": 1.6, "y": 0.6, "z": 0.3, "t": 0.15 },
+    { "x": 1.02, "y": 0.42, "z": 0.05, "t": 0.20 }
+  ],
+  "bounce_point": {
+    "x": 2.2,
+    "y": 1.0,
+    "z": 0.0
+  },
+  "impact_point": {
+    "x": 1.1,
+    "y": 0.4,
+    "z": 0.2
+  },
+  "bat_position": {
+    "x": 1.4,
+    "y": 0.5,
+    "z": 0.3
+  },
+  "batsman_leg_position": {
+    "x": 1.05,
+    "y": 0.45,
+    "z": 0.25
+  },
+  "stump_coordinates": [
+    { "x": 1.0, "y": 0.4, "z": 0.0 },
+    { "x": 1.02, "y": 0.42, "z": 0.0 },
+    { "x": 1.04, "y": 0.41, "z": 0.0 }
+  ],
+  "edge_detection": {
+    "batEdgeDetected": false,
+    "contactFrame": null,
+    "contactZone": null
   }
-  
+}
