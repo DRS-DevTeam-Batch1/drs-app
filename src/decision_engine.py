@@ -80,7 +80,6 @@ def main(input_filepath):
     parsed = parse_input(input_data)
     result = generate_output(parsed)
 
-    # Generate corresponding output filename
     output_filepath = input_filepath.replace(".json", "_output.json")
     with open(output_filepath, "w") as f:
         json.dump(result, f, indent=4)
