@@ -1,0 +1,35 @@
+{
+    "timestamp": "2025-04-22T14:32:00Z",
+    "final_decision": "Out",
+    "decision_reason": "Ball hitting the stumps (LBW)",
+    "trajectory_summary": {
+        "initial_point": {
+            "x": 2.5,
+            "y": 1.2,
+            "z": 0.6,
+            "t": 0.0
+        },
+        "final_point": {
+            "x": 1.02,
+            "y": 0.42,
+            "z": 0.05,
+            "t": 0.2
+        },
+        "closest_to_stumps": {
+            "x": 1.0,
+            "y": 0.4,
+            "z": 0.0
+        },
+        "stump_hit_prediction": true
+    },
+    "ball_contact": {
+        "with_bat": false,
+        "with_leg": true,
+        "edge_detected": false
+    },
+    "visual_decision": {
+        "highlight_path": true,
+        "highlight_miss_zone": false,
+        "decision_overlay_color": "red"
+    }
+}
