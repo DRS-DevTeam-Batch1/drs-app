@@ -1,5 +1,5 @@
 import json
-from src.models import LBWInput, LBWOutput, BallContact, TrajectorySummary, VisualDecision, Point3D
+from models import LBWInput, LBWOutput, Point3D, BallContact, TrajectorySummary, VisualDecision
 
 def is_stump_hit(trajectory, stump_coordinates):
     final_point = trajectory[-1]
@@ -61,7 +61,7 @@ def process_decision(input_data: LBWInput) -> LBWOutput:
         visual_decision=visual_decision
     )
 
-def process_decision(input_file_name, output_file_name):
+def process_decision_wrapper(input_file_name, output_file_name):
     with open(input_file_name) as f:
         input_json = json.load(f)
 
@@ -73,5 +73,5 @@ def process_decision(input_file_name, output_file_name):
     print("Decision:", result.final_decision)
 
 if __name__ == "__main__":
-    process_decision("data/sample_input_lbw_out.json", "data/sample_output_lbw_out.json")
-    process_decision("data/sample_input_lbw_not_out.json", "data/sample_output_lbw_not_out.json")
+    process_decision_wrapper("../data/sample_input_lbw_out.json", "../data/sample_output_lbw_out.json")
+    process_decision_wrapper("../data/sample_input_lbw_not_out.json", "../data/sample_output_lbw_not_out.json")
