@@ -1,15 +1,18 @@
-def analyze_bat_edge(video_path, audio_path):
-    print("\nanalyzing audio")
-    spike_time = detect_audio_spike(audio_path)  #detect audio spike
-    if spike_time is not None:
-        print("checking video around that timestamp")
-        if detect_bat_contact_frame(video_path, spike_time): 
-            print("\nbat edge detected")
-        else:
-            print("\nno visuall confirmation")
-    else:
-        print("\n nooo spike detected in audio")  
+# Forwarding to another module
+        # import requests
+        # trajectory_api = "http://localhost:5001/analyze_trajectory"
+        # response = requests.post(trajectory_api, json=output_payload)
+        # print("Forwarded to trajectory module. Response:", response.text)
+
+        return jsonify({
+            "status": "success",
+            "bat_edge_detected": detection["bat_edge_detected"],
+            "forwarded_to_trajectory": False,
+            "trajectory_module_response": None
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    generateSampInput() 
-    analyze_bat_edge("sample_ball_video.mp4", "sample_audio.wav")
+    app.run(debug=True, port=5000)
