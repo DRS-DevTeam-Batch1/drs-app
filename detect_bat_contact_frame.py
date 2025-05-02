@@ -1,42 +1,22 @@
-def detect_bat_contact_frame(video_path, timestamp, buffer_time=0.5):
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)  
-    target_frame = int((timestamp - buffer_time) * fps)  
-    cap.set(cv2.CAP_PROP_POS_FRAMES, max(target_frame, 0))  # Set frame
+@app.route("/detect_batedge", methods=["POST"])
+def handle_batedge():
+    try:
+        data = request.get_json()
 
-    print(f"Checking frames around timestamp {timestamp}s (target frame: {target_frame})")
+        # Extract required fields
+        ball_trajectory = data["ball_trajectory"]
+        bat_position = data["bat_position"]
+        batsman_leg = data.get("batsman_leg_position")
+        stump_coords = data.get("stump_coordinates")
 
-    ret, prev = cap.read()
-    if not ret:
-        print("Error: Failed to read first frame")
-        return False
-    prev_gray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)  
-    prev_gray = cv2.GaussianBlur(prev_gray, (21, 21), 0)  #reduce noise
+        detection = detect_bat_edge(ball_trajectory, bat_position)
 
-    for i in range(30): 
-        ret, curr = cap.read()
-        if not ret:
-            print("Error: Failed to read frame")
-            break
-        curr_gray = cv2.cvtColor(curr, cv2.COLOR_BGR2GRAY)
-        curr_gray = cv2.GaussianBlur(curr_gray, (21, 21), 0)
-        diff = cv2.absdiff(prev_gray, curr_gray)
-        _, diff = cv2.threshold(diff, 2, 255, cv2.THRESH_BINARY) 
-        motion = np.count_nonzero(diff)
-        print(f"🔍 Frame {i+1} motion: {motion}")  #show motion detecction
-        diff_image_path = f"frame_{i+1}_diff.png"
-        cv2.imwrite(diff_image_path, diff)
-        if motion > 1000:  # Threshold
-            print("Motion detected near bat")
-            motion_image_path = f"frame_{i+1}_motion.png"
-            cv2.imwrite(motion_image_path, diff)  #save image
-            cap.release()
-            os.remove(diff_image_path)
-            os.remove(motion_image_path)
-            return True
-        os.remove(diff_image_path)
-
-        prev_gray = curr_gray
-
-    cap.release()  #close file
-    return False
+        output_payload = {
+            "bat_edge_detected": detection["bat_edge_detected"],
+            "contact_time": detection["contact_time"],
+            "contact_distance": detection["contact_distance"],
+            "ball_trajectory": ball_trajectory if detection["bat_edge_detected"] else None,
+            "bat_position": bat_position,
+            "batsman_leg_position": batsman_leg,
+            "stump_coordinates": stump_coords
+        }
