@@ -93,11 +93,6 @@ You can configure the host, port, and log level using environment variables:
     "closest_to_stumps": { "x": 0.0, "y": 0.0, "z": 0.0 },
     "stump_hit_prediction": false
   },
-  "ball_contact": {
-    "with_bat": false,
-    "with_leg": true,
-    "edge_detected": false
-  },
   "visual_decision": {
     "highlight_path": true,
     "highlight_miss_zone": true,
