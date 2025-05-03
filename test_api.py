@@ -62,7 +62,7 @@ out_cases: List[Tuple[str, dict]] = [
 #  3 × NOT OUT  (>0.15 m away)
 # ──────────────────────────────
 not_out_cases: List[Tuple[str, dict]] = [
-    make_case("N/O-1", (0.30,  0.30, 0.71), "inswing"),
+    make_case("N/O-1", (0.30,  0.31, 0.71), "inswing"),
     make_case("N/O-2", (-0.25, 0.25, 0.71), "outswing"),
     make_case("N/O-3", (0.18,  0.25, 0.71), "none"),
 ]

@@ -70,15 +70,23 @@ def _will_hit_stumps(path: List[TrajectoryPoint]) -> tuple[bool, float]:
 
 def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
     """
-    Returns (swing_type, swing_degree).
-    Very naive: compares mid-point to straight-line between release and end.
+    (swing_type, swing_degree)
+
+    Uses the mid-point deviation from the straight line joining the first and
+    last samples.  Guards against zero X-displacement to avoid div-by-zero.
     """
     if len(path) < 3:
         return "none", 0.0
 
     first, mid, last = path[0], path[len(path) // 2], path[-1]
-    expected_y = first.y + (last.y - first.y) * (mid.x - first.x) / (last.x - first.x)
-    deviation = mid.y - expected_y
+    dx_total = last.x - first.x
+    dy_total = last.y - first.y
+
+    if abs(dx_total) < 1e-6:
+        deviation = 0.0
+    else:
+        expected_y = first.y + dy_total * (mid.x - first.x) / dx_total
+        deviation = mid.y - expected_y
 
     if deviation > 0.05:
         return "outswing", abs(deviation) * 10.0
