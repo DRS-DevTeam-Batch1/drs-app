@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from typing import List
 
-from models import (
+from src.models import (
     LBWInput,
     LBWOutput,
     Point3D,

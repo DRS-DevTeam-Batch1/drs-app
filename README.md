@@ -70,20 +70,13 @@ You can configure the host, port, and log level using environment variables:
 
 ```json
 {
-  "timestamp": "2023-10-01T12:00:00Z",
-  "ball_trajectory": [
-    {"x": 1.0, "y": 2.0, "z": 3.0, "t": 0.1},
-    {"x": 1.5, "y": 2.5, "z": 3.5, "t": 0.2}
+  "predicted_path": [
+    { "x": 2.0, "y": 0.8, "z": 0.3, "t": 0.1 },
+    { "x": 1.8, "y": 0.6, "z": 0.2, "t": 0.1 }
   ],
-  "bounce_point": {"x": 1.0, "y": 2.0, "z": 0.0},
-  "impact_point": {"x": 1.0, "y": 2.0, "z": 0.0},
-  "bat_position": {"x": 1.0, "y": 2.0, "z": 0.0},
-  "batsman_leg_position": {"x": 1.0, "y": 2.0, "z": 0.0},
-  "stump_coordinates": [
-    {"x": 0.0, "y": 0.0, "z": 0.0},
-    {"x": 0.0, "y": 0.0, "z": 1.0}
-  ],
-  "edge_detection": {"batEdgeDetected": false}
+  "impact_location": { "x": 1.6, "y": 0.4, "z": 0.1 },
+  "bounce_point": { "x": 2.2, "y": 1.0, "z": 0.0 },
+  "swing_type": "inswing"
 }
 ```
 
@@ -95,9 +88,9 @@ You can configure the host, port, and log level using environment variables:
   "final_decision": "Not Out",
   "decision_reason": "Ball missing the stumps",
   "trajectory_summary": {
-    "initial_point": {"x": 1.0, "y": 2.0, "z": 3.0},
-    "final_point": {"x": 1.5, "y": 2.5, "z": 3.5},
-    "closest_to_stumps": {"x": 0.0, "y": 0.0, "z": 0.0},
+    "initial_point": { "x": 1.0, "y": 2.0, "z": 3.0 },
+    "final_point": { "x": 1.5, "y": 2.5, "z": 3.5 },
+    "closest_to_stumps": { "x": 0.0, "y": 0.0, "z": 0.0 },
     "stump_hit_prediction": false
   },
   "ball_contact": {
@@ -117,6 +110,8 @@ You can configure the host, port, and log level using environment variables:
 
 To test the API, run the following command ```bash
 python test_api.py
+
 ```
 
 This script will send a request to the `/api/lbw-decision` endpoint using a sample input file located at `data/sample_input_lbw.json`.
+```
