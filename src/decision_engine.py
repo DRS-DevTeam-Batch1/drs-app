@@ -2,11 +2,10 @@ import math
 from datetime import datetime
 from typing import List
 
-from src.models import (
+from models import (
     LBWInput,
     LBWOutput,
     Point3D,
-    BallContact,
     TrajectorySummary,
     VisualDecision,
     SwingAnalysisOutput,
@@ -127,7 +126,6 @@ def process_decision(inp: LBWInput) -> LBWOutput:
         final_decision=final,
         decision_reason=reason,
         trajectory_summary=traj_sum,
-        ball_contact=BallContact(),     # all False – no bat/edge logic in this minimal build
         visual_decision=visual,
     )
 

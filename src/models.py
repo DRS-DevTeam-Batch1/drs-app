@@ -15,11 +15,6 @@ class LBWInput(BaseModel):
     bounce_point: Point3D
     swing_type: str
 
-class BallContact(BaseModel):
-    with_bat: bool = False
-    with_leg: bool = False
-    edge_detected: bool = False
-
 class TrajectorySummary(BaseModel):
     initial_point: dict
     final_point: dict
@@ -36,7 +31,6 @@ class LBWOutput(BaseModel):
     final_decision: str
     decision_reason: str
     trajectory_summary: TrajectorySummary
-    ball_contact: BallContact
     visual_decision: VisualDecision
 
 class SwingAnalysisOutput(BaseModel):
