@@ -84,19 +84,33 @@ You can configure the host, port, and log level using environment variables:
 
 ```json
 {
-  "timestamp": "2023-10-01T12:00:00Z",
-  "final_decision": "Not Out",
-  "decision_reason": "Ball missing the stumps",
+  "decision_reason": "Ball projected to hit the stumps (100.0% overlap) no significant swing",
+  "final_decision": "Out",
+  "timestamp": "2025-05-03T06:44:00.961750",
   "trajectory_summary": {
-    "initial_point": { "x": 1.0, "y": 2.0, "z": 3.0 },
-    "final_point": { "x": 1.5, "y": 2.5, "z": 3.5 },
-    "closest_to_stumps": { "x": 0.0, "y": 0.0, "z": 0.0 },
-    "stump_hit_prediction": false
+    "closest_to_stumps": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.71
+    },
+    "final_point": {
+      "t": 0.8,
+      "x": 0.02,
+      "y": 0.02,
+      "z": 0.71
+    },
+    "initial_point": {
+      "t": 0.0,
+      "x": 0.3,
+      "y": 1.5,
+      "z": 1.0
+    },
+    "stump_hit_prediction": true
   },
   "visual_decision": {
-    "highlight_path": true,
-    "highlight_miss_zone": true,
-    "decision_overlay_color": "green"
+    "decision_overlay_color": "red",
+    "highlight_miss_zone": false,
+    "highlight_path": true
   }
 }
 ```
