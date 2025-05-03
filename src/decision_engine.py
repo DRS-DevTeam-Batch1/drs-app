@@ -1,77 +1,152 @@
-import json
-from models import LBWInput, LBWOutput, Point3D, BallContact, TrajectorySummary, VisualDecision
+import math
+from datetime import datetime
+from typing import List
 
-def is_stump_hit(trajectory, stump_coordinates):
-    final_point = trajectory[-1]
-    for stump in stump_coordinates:
-        distance = ((final_point.x - stump.x) ** 2 +
-                    (final_point.y - stump.y) ** 2 +
-                    (final_point.z - stump.z) ** 2) ** 0.5
-        if distance < 0.15:
-            return True, stump
-    return False, stump_coordinates[0] if stump_coordinates else Point3D(x=0.0, y=0.0, z=0.0)
+from src.models import (
+    LBWInput,
+    LBWOutput,
+    Point3D,
+    BallContact,
+    TrajectorySummary,
+    VisualDecision,
+    SwingAnalysisOutput,
+    TrajectoryPoint,
+)
 
-def detect_lbw(trajectory, batsman_leg_position, stump_coordinates):
-    if not trajectory or not batsman_leg_position or not stump_coordinates:
-        return False
-    return True
+# ──────────────────────────────
+# Fixed ground-truth for a middle stump
+# ──────────────────────────────
+STUMP_CENTER = Point3D(x=0.0, y=0.0, z=0.71)   # 71 cm = top of stump
+STUMP_RADIUS = 0.05                            # 5 cm radius for a “clean” hit
 
-def process_decision(input_data: LBWInput) -> LBWOutput:
-    stump_hit, closest_stump = is_stump_hit(input_data.ball_trajectory, input_data.stump_coordinates)
-    
-    ball_contact = BallContact(
-        with_bat=input_data.edge_detection.batEdgeDetected,
-        with_leg=True,
-        edge_detected=False
+
+# ──────────────────────────────
+# Small maths helpers
+# ──────────────────────────────
+def _distance(p1: Point3D, p2: Point3D) -> float:
+    return ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2 + (p1.z - p2.z) ** 2) ** 0.5
+
+
+def _velocity(path: List[TrajectoryPoint]) -> float:
+    """Straight-line average velocity between first and last sample (m · s-1)."""
+    if len(path) < 2:
+        return 0.0
+    first, last = path[0], path[-1]
+    dt = last.t - first.t
+    return _distance(first, last) / dt if dt > 0 else 0.0
+
+
+def _angle(path: List[TrajectoryPoint]) -> float:
+    """Heading in the horizontal (XY) plane at impact (degrees)."""
+    if len(path) < 2:
+        return 0.0
+    first, last = path[0], path[-1]
+    dx, dy = last.x - first.x, last.y - first.y
+    return math.degrees(math.atan2(dy, dx))
+
+
+def _will_hit_stumps(path: List[TrajectoryPoint]) -> tuple[bool, float]:
+    """
+    Returns (is_hit, hit_percentage).
+
+    A clean hit = 100%. Between stump edge (0.05m) and 0.15m we give a linear %
+    to mimic Hawk-Eye confidence.
+    """
+    if not path:
+        return False, 0.0
+
+    end_point = path[-1]
+    dist = _distance(end_point, STUMP_CENTER)
+
+    if dist <= STUMP_RADIUS:
+        return True, 100.0
+    if dist <= 0.15:
+        pct = max(
+            0.0,
+            100.0 * (1.0 - (dist - STUMP_RADIUS) / (0.15 - STUMP_RADIUS)),
+        )
+        return pct > 0.0, pct
+    return False, 0.0
+
+def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
+    """
+    Returns (swing_type, swing_degree).
+    Very naive: compares mid-point to straight-line between release and end.
+    """
+    if len(path) < 3:
+        return "none", 0.0
+
+    first, mid, last = path[0], path[len(path) // 2], path[-1]
+    expected_y = first.y + (last.y - first.y) * (mid.x - first.x) / (last.x - first.x)
+    deviation = mid.y - expected_y
+
+    if deviation > 0.05:
+        return "outswing", abs(deviation) * 10.0
+    if deviation < -0.05:
+        return "inswing", abs(deviation) * 10.0
+    return "none", abs(deviation) * 10.0
+
+def process_decision(inp: LBWInput) -> LBWOutput:
+    swing_type, swing_deg = _analyse_swing(inp.predicted_path)
+    stump_hit, hit_pct = _will_hit_stumps(inp.predicted_path)
+
+    swing_label = (
+        f"{swing_type} swing ({swing_deg:.1f}°)" if swing_type != "none" else "no significant swing"
     )
-    
-    if ball_contact.with_bat:
-        final_decision = "Edge Detected"
-        decision_reason = "Bat edge detected before impact"
-    elif detect_lbw(input_data.ball_trajectory, input_data.batsman_leg_position, input_data.stump_coordinates):
-        if stump_hit:
-            final_decision = "Out"
-            decision_reason = "Ball hitting the stumps (LBW)"
-        else:
-            final_decision = "Not Out"
-            decision_reason = "Ball missing the stumps"
+
+    if stump_hit:
+        final = "Out"
+        reason = f"Ball projected to hit the stumps ({hit_pct:.1f}% overlap) {swing_label}"
     else:
-        final_decision = "Not Out"
-        decision_reason = "Impact or pitch conditions not met"
-    
-    trajectory_summary = TrajectorySummary(
-        initial_point=input_data.ball_trajectory[0].model_dump() if input_data.ball_trajectory else {},
-        final_point=input_data.ball_trajectory[-1].model_dump() if input_data.ball_trajectory else {},
-        closest_to_stumps=closest_stump.model_dump(),
-        stump_hit_prediction=stump_hit
+        final = "Not Out"
+        reason = f"Ball projected to miss the stumps {swing_label}"
+
+    traj_sum = TrajectorySummary(
+        initial_point=inp.predicted_path[0].model_dump(),
+        final_point=inp.predicted_path[-1].model_dump(),
+        closest_to_stumps=STUMP_CENTER.model_dump(),
+        stump_hit_prediction=stump_hit,
     )
-    
-    visual_decision = VisualDecision(
+
+    visual = VisualDecision(
         highlight_path=True,
         highlight_miss_zone=not stump_hit,
-        decision_overlay_color="red" if final_decision == "Out" else "green"
+        decision_overlay_color="red" if final == "Out" else "green",
     )
-    
+
     return LBWOutput(
-        timestamp=input_data.timestamp,
-        final_decision=final_decision,
-        decision_reason=decision_reason,
-        trajectory_summary=trajectory_summary,
-        ball_contact=ball_contact,
-        visual_decision=visual_decision
+        timestamp=datetime.utcnow().isoformat(),
+        final_decision=final,
+        decision_reason=reason,
+        trajectory_summary=traj_sum,
+        ball_contact=BallContact(),     # all False – no bat/edge logic in this minimal build
+        visual_decision=visual,
     )
 
-def process_decision_wrapper(input_file_name, output_file_name):
-    with open(input_file_name) as f:
-        input_json = json.load(f)
+def analyse_swing_detailed(inp: LBWInput) -> SwingAnalysisOutput:
+    swing_type = inp.swing_type
+    _, swing_degree = _analyse_swing(inp.predicted_path)
 
-    input_data = LBWInput.model_validate(input_json)
-    result = process_decision(input_data)
-    with open(output_file_name, "w") as f:
-        json.dump(result.model_dump(), f, indent=4)
+    first, last = inp.predicted_path[0], inp.predicted_path[-1]
+    deviation = _distance(first, last)
+    dangerous = deviation > 0.5 and swing_degree > 3.0
 
-    print("Decision:", result.final_decision)
+    recommended = {
+        "inswing": "straight drive",
+        "outswing": "cover drive",
+    }.get(swing_type, "straight bat")
 
-if __name__ == "__main__":
-    process_decision_wrapper("../data/sample_input_lbw_out.json", "../data/sample_output_lbw_out.json")
-    process_decision_wrapper("../data/sample_input_lbw_not_out.json", "../data/sample_output_lbw_not_out.json")
+    impact_info = {
+        "position": inp.impact_location.model_dump(),
+        "velocity": _velocity(inp.predicted_path),
+        "angle": _angle(inp.predicted_path),
+    }
+
+    return SwingAnalysisOutput(
+        swing_type=swing_type,
+        swing_degree=swing_degree,
+        predicted_deviation=deviation,
+        impact_analysis=impact_info,
+        is_dangerous_delivery=dangerous,
+        recommended_shot=recommended,
+    )

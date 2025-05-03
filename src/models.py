@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 
 class Point3D(BaseModel):
@@ -9,25 +9,16 @@ class Point3D(BaseModel):
 class TrajectoryPoint(Point3D):
     t: float
 
-class EdgeDetection(BaseModel):
-    batEdgeDetected: bool
-    contactFrame: Optional[int] = None
-    contactZone: Optional[str] = None
-
 class LBWInput(BaseModel):
-    timestamp: str
-    ball_trajectory: List[TrajectoryPoint]
+    predicted_path: List[TrajectoryPoint]
+    impact_location: Point3D
     bounce_point: Point3D
-    impact_point: Point3D
-    bat_position: Point3D
-    batsman_leg_position: Point3D
-    stump_coordinates: List[Point3D]
-    edge_detection: EdgeDetection
+    swing_type: str
 
 class BallContact(BaseModel):
-    with_bat: bool
-    with_leg: bool
-    edge_detected: bool
+    with_bat: bool = False
+    with_leg: bool = False
+    edge_detected: bool = False
 
 class TrajectorySummary(BaseModel):
     initial_point: dict
@@ -38,7 +29,7 @@ class TrajectorySummary(BaseModel):
 class VisualDecision(BaseModel):
     highlight_path: bool
     highlight_miss_zone: bool
-    decision_overlay_color: str
+    decision_overlay_color: str 
 
 class LBWOutput(BaseModel):
     timestamp: str
@@ -47,3 +38,11 @@ class LBWOutput(BaseModel):
     trajectory_summary: TrajectorySummary
     ball_contact: BallContact
     visual_decision: VisualDecision
+
+class SwingAnalysisOutput(BaseModel):
+    swing_type: str
+    swing_degree: float
+    predicted_deviation: float
+    impact_analysis: dict
+    is_dangerous_delivery: bool
+    recommended_shot: str
