@@ -103,10 +103,10 @@ You can configure the host, port, and log level using environment variables:
 
 ## Testing the API
 
-To test the API, run the following command ```bash
-python test_api.py
+To test the API, run the following command
 
+```bash
+python test_api.py
 ```
 
 This script will send a request to the `/api/lbw-decision` endpoint using a sample input file located at `data/sample_input_lbw.json`.
-```
