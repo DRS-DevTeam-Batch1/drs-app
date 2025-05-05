@@ -82,3 +82,30 @@ stump_position = stump_position
 # Is the ball predicted to hit stumps?
 will_hit_stumps = check_if_ball_hits_stumps(impact_x, impact_y, stump_position)
 ````
+
+## Edge Case & Rule Enhancements
+
+### Overview
+
+To improve decision reliability in ambiguous or borderline LBW situations, we implemented a dedicated edge case handler.
+
+### Rules Handled:
+
+- **Pitched Outside Leg Stump**: Auto `Not Out`.
+- **Full Toss / No Bounce Detected**: Suggest manual review.
+- **Bat and Pad Overlap**: Activates `Umpire’s Call` flag.
+
+### Implementation
+
+A new function `check_edge_cases()` was created that receives the bounce point, impact point, leg position, and stump coordinates. Based on this, it determines:
+
+- `auto_not_out`: If ball pitched outside leg stump.
+- `no_bounce_detected`: Based on z-coordinate proximity.
+- `umpires_call_flag`: If bat and leg positions overlap.
+- `decision_confidence`: A score between 0.0 to 1.0 indicating decision certainty.
+
+### Model Changes
+
+- `LBWOutput` now includes:
+  - `decision_confidence: float`
+  - `umpires_call_flag: bool`
