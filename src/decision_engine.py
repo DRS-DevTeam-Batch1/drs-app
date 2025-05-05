@@ -93,38 +93,8 @@ def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
         return "inswing", abs(deviation) * 10.0
     return "none", abs(deviation) * 10.0
 
-from math import isclose
 
-def check_edge_cases(bounce_point: Point3D, impact_point: Point3D, leg_position: Point3D, stump_coords: List[Point3D]) -> dict:
-    result = {
-        "auto_not_out": False,
-        "no_bounce_detected": False,
-        "umpires_call_flag": False,
-        "decision_confidence": 1.0
-    }
-
-    # pitched outside leg stump
-    stump_x_values = [stump.x for stump in stump_coords]
-    middle_stump_x = sum(stump_x_values) / len(stump_x_values)
-    leg_side = middle_stump_x - 0.2  # 0.2 margin for left leg zone
-    
-    if bounce_point.x < leg_side:
-        result["auto_not_out"] = True
-        result["decision_confidence"] = 1.0
-        return result
-
-    #  no bounce detected, it's a full toss
-    if isclose(bounce_point.z, impact_point.z, abs_tol=0.01): 
-        result["no_bounce_detected"] = True
-        result["decision_confidence"] = 0.85
-
-
-    return result
-
-
-from datetime import datetime
-
-def process_decision(inp: LBWInput, leg_position: Point3D, stump_coordinates: List[Point3D]) -> LBWOutput:
+def process_decision(inp: LBWInput) -> LBWOutput:
     swing_type, swing_deg = _analyse_swing(inp.predicted_path)
     stump_hit, hit_pct = _will_hit_stumps(inp.predicted_path)
 
@@ -132,23 +102,7 @@ def process_decision(inp: LBWInput, leg_position: Point3D, stump_coordinates: Li
         f"{swing_type} swing ({swing_deg:.1f}°)" if swing_type != "none" else "no significant swing"
     )
 
-    edge = check_edge_cases(
-        bounce_point=inp.bounce_point,
-        impact_point=inp.impact_location,
-        leg_position=leg_position,
-        stump_coords=stump_coordinates
-    )
-
-    if edge["auto_not_out"]:
-        final = "Not Out"
-        reason = "Ball pitched outside leg stump"
-    elif edge["no_bounce_detected"]:
-        final = "Review Suggested"
-        reason = "Full toss or bounce undetected"
-    elif edge["umpires_call_flag"]:
-        final = "Umpire's Call"
-        reason = "Bat and pad overlap"
-    elif stump_hit:
+    if stump_hit:
         final = "Out"
         reason = f"Ball projected to hit the stumps ({hit_pct:.1f}% overlap) {swing_label}"
     else:
@@ -172,12 +126,9 @@ def process_decision(inp: LBWInput, leg_position: Point3D, stump_coordinates: Li
         timestamp=datetime.utcnow().isoformat(),
         final_decision=final,
         decision_reason=reason,
-        decision_confidence=edge["decision_confidence"],
-        umpires_call_flag=edge["umpires_call_flag"],
         trajectory_summary=traj_sum,
         visual_decision=visual,
     )
-
 
 def analyse_swing_detailed(inp: LBWInput) -> SwingAnalysisOutput:
     swing_type = inp.swing_type
