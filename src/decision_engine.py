@@ -93,6 +93,35 @@ def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
         return "inswing", abs(deviation) * 10.0
     return "none", abs(deviation) * 10.0
 
+from math import isclose
+
+def check_edge_cases(bounce_point: Point3D, impact_point: Point3D, leg_position: Point3D, stump_coords: List[Point3D]) -> dict:
+    result = {
+        "auto_not_out": False,
+        "no_bounce_detected": False,
+        "umpires_call_flag": False,
+        "decision_confidence": 1.0
+    }
+
+    # pitched outside leg stump
+    stump_x_values = [stump.x for stump in stump_coords]
+    middle_stump_x = sum(stump_x_values) / len(stump_x_values)
+    leg_side = middle_stump_x - 0.2  # 0.2 margin for left leg zone
+    
+    if bounce_point.x < leg_side:
+        result["auto_not_out"] = True
+        result["decision_confidence"] = 1.0
+        return result
+
+    #  no bounce detected, it's a full toss
+    if isclose(bounce_point.z, impact_point.z, abs_tol=0.01): 
+        result["no_bounce_detected"] = True
+        result["decision_confidence"] = 0.85
+
+
+    return result
+
+
 def process_decision(inp: LBWInput) -> LBWOutput:
     swing_type, swing_deg = _analyse_swing(inp.predicted_path)
     stump_hit, hit_pct = _will_hit_stumps(inp.predicted_path)
