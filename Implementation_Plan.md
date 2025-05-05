@@ -1,24 +1,19 @@
-# 🧠 Decision Making Module – DRS System
+# Decision Making Module – DRS System
 
 The Decision Making Module serves as the core logic engine of the ThirdEye DRS pipeline. It integrates data from multiple upstream modules—Trajectory Analysis, Bat Edge Detection, and Ball & Object Tracking—to logically determine match outcomes such as:
 
 Out
-
 Not Out
-
 Edge Detected
 
 This module maps structured inputs to cricket rules, applies decision logic, and prepares output metadata for downstream rendering during live or replay broadcasts.
 
 🔄 Position in the Pipeline
-mermaid
-Copy
-Edit
 graph TD
-  A[Trajectory Analysis Module] --> E[Decision Making Module]
-  B[Bat's Edge Detection Module] --> E
-  C[Ball & Object Tracking Module] --> E
-  E --> F[Stream Analysis & Overlay Module]
+A[Trajectory Analysis Module] --> E[Decision Making Module]
+B[Bat's Edge Detection Module] --> E
+C[Ball & Object Tracking Module] --> E
+E --> F[Stream Analysis & Overlay Module]
 📥 Input Data
 The module consumes structured JSON inputs from upstream modules:
 
@@ -62,8 +57,8 @@ LBW evaluation is skipped
 
 Contact point on the bat is highlighted in the output
 
-👣 3. LBW Rule Evaluation (If No Edge)
-If no edge is detected, LBW conditions are evaluated:
+3. LBW Rule Evaluation (If No Edge)
+   If no edge is detected, LBW conditions are evaluated:
 
 Did the ball pitch in line or outside off?
 
@@ -73,10 +68,8 @@ Is the ball predicted to hit the stumps?
 
 This uses physics-based modeling from the trajectory data to evaluate the dismissal validity.
 
-✅ Decision Logic Tree
-pgsql
-Copy
-Edit
+Decision Logic Tree
+
 IF batEdgeDetected → "Edge Detected"
 ELSE IF LBW Valid → "Out"
 ELSE → "Not Out"
@@ -85,21 +78,19 @@ The final result is structured and returned as JSON with both the decision and s
 
 📤 Output Format
 json
-Copy
-Edit
 {
-  "decision": "Out",
-  "dismissalType": "LBW",
-  "trajectory": [[x1, y1, z1], [x2, y2, z2], ...],
-  "impactPoint": [x, y, z],
-  "bouncePoint": [x, y, z],
-  "batEdgeDetected": false,
-  "frameTimestamp": 1302,
-  "visualMarkers": {
-    "highlightImpact": true,
-    "stumpProjection": true,
-    "decisionLabel": "Out"
-  }
+"decision": "Out",
+"dismissalType": "LBW",
+"trajectory": [[x1, y1, z1], [x2, y2, z2], ...],
+"impactPoint": [x, y, z],
+"bouncePoint": [x, y, z],
+"batEdgeDetected": false,
+"frameTimestamp": 1302,
+"visualMarkers": {
+"highlightImpact": true,
+"stumpProjection": true,
+"decisionLabel": "Out"
+}
 }
 🧪 Testing and Validation
 ✅ Edge Scenarios: Validated with various spin and swing angles
@@ -109,4 +100,3 @@ Edit
 ✅ Overlay Visuals: Manually reviewed to confirm alignment with ball trajectory
 
 ✅ Debug Logs: Frame-level logs maintained to support replay validation and debugging
-
