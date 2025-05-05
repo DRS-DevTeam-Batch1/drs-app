@@ -122,7 +122,9 @@ def check_edge_cases(bounce_point: Point3D, impact_point: Point3D, leg_position:
     return result
 
 
-def process_decision(inp: LBWInput) -> LBWOutput:
+from datetime import datetime
+
+def process_decision(inp: LBWInput, leg_position: Point3D, stump_coordinates: List[Point3D]) -> LBWOutput:
     swing_type, swing_deg = _analyse_swing(inp.predicted_path)
     stump_hit, hit_pct = _will_hit_stumps(inp.predicted_path)
 
@@ -130,7 +132,23 @@ def process_decision(inp: LBWInput) -> LBWOutput:
         f"{swing_type} swing ({swing_deg:.1f}°)" if swing_type != "none" else "no significant swing"
     )
 
-    if stump_hit:
+    edge = check_edge_cases(
+        bounce_point=inp.bounce_point,
+        impact_point=inp.impact_location,
+        leg_position=leg_position,
+        stump_coords=stump_coordinates
+    )
+
+    if edge["auto_not_out"]:
+        final = "Not Out"
+        reason = "Ball pitched outside leg stump"
+    elif edge["no_bounce_detected"]:
+        final = "Review Suggested"
+        reason = "Full toss or bounce undetected"
+    elif edge["umpires_call_flag"]:
+        final = "Umpire's Call"
+        reason = "Bat and pad overlap"
+    elif stump_hit:
         final = "Out"
         reason = f"Ball projected to hit the stumps ({hit_pct:.1f}% overlap) {swing_label}"
     else:
@@ -154,9 +172,12 @@ def process_decision(inp: LBWInput) -> LBWOutput:
         timestamp=datetime.utcnow().isoformat(),
         final_decision=final,
         decision_reason=reason,
+        decision_confidence=edge["decision_confidence"],
+        umpires_call_flag=edge["umpires_call_flag"],
         trajectory_summary=traj_sum,
         visual_decision=visual,
     )
+
 
 def analyse_swing_detailed(inp: LBWInput) -> SwingAnalysisOutput:
     swing_type = inp.swing_type
