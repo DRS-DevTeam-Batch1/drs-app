@@ -30,8 +30,11 @@ class LBWOutput(BaseModel):
     timestamp: str
     final_decision: str
     decision_reason: str
+    decision_confidence: float  
+    umpires_call_flag: bool     
     trajectory_summary: TrajectorySummary
     visual_decision: VisualDecision
+
 
 class SwingAnalysisOutput(BaseModel):
     swing_type: str
