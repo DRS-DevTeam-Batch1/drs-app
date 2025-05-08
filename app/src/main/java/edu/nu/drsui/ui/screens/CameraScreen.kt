@@ -425,8 +425,16 @@ suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutin
 suspend fun uploadVideo(filePath: String, context: Context, onComplete: () -> Unit) {
     try {
         val file = File(filePath)
+        if (!file.exists()) {
+            Toast.makeText(context, "File does not exist: $filePath", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val requestFile = file.asRequestBody("video/mp4".toMediaTypeOrNull())
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        // Log the file being uploaded
+        Log.d("Upload", "Uploading video from: $filePath")
 
         val api = RetrofitClient.retrofit.create(VideoUploadApi::class.java)
 
@@ -435,16 +443,24 @@ suspend fun uploadVideo(filePath: String, context: Context, onComplete: () -> Un
         }
 
         if (response.isSuccessful) {
-            Toast.makeText(context, "Video uploaded successfully!", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Video uploaded successfully!", Toast.LENGTH_SHORT).show()
+            }
         } else {
-            Toast.makeText(context, "Upload failed: ${response.code()}", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Upload failed: ${response.code()}", Toast.LENGTH_SHORT).show()
+            }
         }
     } catch (e: Exception) {
         e.printStackTrace()
         if (e is HttpException) {
-            Toast.makeText(context, "Server error: ${e.code()}", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Server error: ${e.code()}", Toast.LENGTH_SHORT).show()
+            }
         } else {
-            Toast.makeText(context, "Upload failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Upload failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
         }
     } finally {
         onComplete()

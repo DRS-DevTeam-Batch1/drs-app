@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.dp
 fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
-    var serverUrl by remember { mutableStateOf("https://api.cricketdrs.com") }
-    var serverPort by remember { mutableStateOf("8080") }
+    var serverUrl by remember { mutableStateOf("http://10.0.2.2") }
+    var serverPort by remember { mutableStateOf("8000") }
     var maxStoredBalls by remember { mutableStateOf("6") }
 
     Scaffold(
