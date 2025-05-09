@@ -109,12 +109,14 @@ def process_decision(inp: LBWInput) -> LBWOutput:
         final = "Not Out"
         reason = f"Ball projected to miss the stumps {swing_label}"
 
+
     traj_sum = TrajectorySummary(
         initial_point=inp.predicted_path[0].model_dump(),
         final_point=inp.predicted_path[-1].model_dump(),
         closest_to_stumps=STUMP_CENTER.model_dump(),
         stump_hit_prediction=stump_hit,
     )
+
 
     visual = VisualDecision(
         highlight_path=True,
@@ -130,30 +132,33 @@ def process_decision(inp: LBWInput) -> LBWOutput:
         visual_decision=visual,
     )
 
-def analyse_swing_detailed(inp: LBWInput) -> SwingAnalysisOutput:
-    swing_type = inp.swing_type
-    _, swing_degree = _analyse_swing(inp.predicted_path)
+def analyze_swing_detailed(input_data: LBWInput) -> SwingAnalysisOutput:
+    swing_type = input_data.swing_type
+    _, degree_of_swing = _analyse_swing(input_data.predicted_path)
 
-    first, last = inp.predicted_path[0], inp.predicted_path[-1]
-    deviation = _distance(first, last)
-    dangerous = deviation > 0.5 and swing_degree > 3.0
+    start_point = input_data.predicted_path[0]
+    end_point = input_data.predicted_path[-1]
+    deviation = _distance(start_point, end_point)
 
-    recommended = {
+    is_dangerous = deviation > 0.5 and degree_of_swing > 3.0
+
+    shot_suggestion = {
         "inswing": "straight drive",
-        "outswing": "cover drive",
+        "outswing": "cover drive"
     }.get(swing_type, "straight bat")
 
-    impact_info = {
-        "position": inp.impact_location.model_dump(),
-        "velocity": _velocity(inp.predicted_path),
-        "angle": _angle(inp.predicted_path),
+    impact_details = {
+        "position": input_data.impact_location.model_dump(),
+        "velocity": _velocity(input_data.predicted_path),
+        "angle": _angle(input_data.predicted_path)
     }
 
     return SwingAnalysisOutput(
         swing_type=swing_type,
-        swing_degree=swing_degree,
+        swing_degree=degree_of_swing,
         predicted_deviation=deviation,
-        impact_analysis=impact_info,
-        is_dangerous_delivery=dangerous,
-        recommended_shot=recommended,
+        impact_analysis=impact_details,
+        is_dangerous_delivery=is_dangerous,
+        recommended_shot=shot_suggestion
     )
+
