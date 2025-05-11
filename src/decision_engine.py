@@ -1,22 +1,27 @@
+"""Decision Engine for LBW (Leg Before Wicket) analysis in cricket.
+
+This module contains the core logic for analyzing ball trajectories and making
+LBW decisions based on projected paths and swing characteristics.
+"""
 import math
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 from src.models import (
     LBWInput,
     LBWOutput,
     Point3D,
     TrajectorySummary,
-    VisualDecision,
     SwingAnalysisOutput,
+    VisualDecision,
     TrajectoryPoint,
 )
 
-# ──────────────────────────────
-# Fixed ground-truth for a middle stump
-# ──────────────────────────────
-STUMP_CENTER = Point3D(x=0.0, y=0.0, z=0.71)   # 71 cm = top of stump
-STUMP_RADIUS = 0.05                            # 5 cm radius for a “clean” hit
+# ──────────────────────────────────────────────────────
+# Fixed ground-truth constants for a middle stump
+# ──────────────────────────────────────────────────────
+STUMP_CENTER: Point3D = Point3D(x=0.0, y=0.0, z=0.71)  # 71 cm = top of stump
+STUMP_RADIUS: float = 0.05  # 5 cm radius for a "clean" hit
 
 
 # ──────────────────────────────
@@ -44,7 +49,7 @@ def _angle(path: List[TrajectoryPoint]) -> float:
     return math.degrees(math.atan2(dy, dx))
 
 
-def _will_hit_stumps(path: List[TrajectoryPoint]) -> tuple[bool, float]:
+def _will_hit_stumps(path: List[TrajectoryPoint]) -> Tuple[bool, float]:
     """
     Returns (is_hit, hit_percentage).
 
@@ -54,13 +59,13 @@ def _will_hit_stumps(path: List[TrajectoryPoint]) -> tuple[bool, float]:
     if not path:
         return False, 0.0
 
-    end_point = path[-1]
-    dist = _distance(end_point, STUMP_CENTER)
+    end_point: TrajectoryPoint = path[-1]
+    dist: float = _distance(end_point, STUMP_CENTER)
 
     if dist <= STUMP_RADIUS:
         return True, 100.0
     if dist <= 0.15:
-        pct = max(
+        pct: float = max(
             0.0,
             100.0 * (1.0 - (dist - STUMP_RADIUS) / (0.15 - STUMP_RADIUS)),
         )
