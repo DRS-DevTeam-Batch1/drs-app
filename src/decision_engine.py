@@ -5,7 +5,7 @@ LBW decisions based on projected paths and swing characteristics.
 """
 import math
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from src.models import (
     LBWInput,
@@ -99,40 +99,122 @@ def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
     return "none", abs(deviation) * 10.0
 
 def process_decision(input_data: LBWInput) -> LBWOutput:
-    swing_type, swing_angle = _analyse_swing(input_data.predicted_path)
-    will_hit_stumps, overlap_percentage = _will_hit_stumps(input_data.predicted_path)
-
-    if swing_type != "none":
-        swing_description = f"{swing_type} swing ({swing_angle:.1f}°)"
+    """
+    Process the input data and make a decision based on the input type.
+    
+    The function handles three types of inputs:
+    1. Trajectory-based input with predicted path and swing characteristics
+    2. Simple decision with just decision and reason
+    3. Bat edge detection input with ball trajectory and bat position
+    """
+    # Determine which type of input we're dealing with
+    
+    # Type 2: Simple decision with just decision and reason
+    if input_data.reason is not None and input_data.decision is not None:
+        return LBWOutput(
+            timestamp=datetime.now().isoformat(),
+            final_decision=input_data.decision,
+            decision_reason=input_data.reason,
+            visual_decision=VisualDecision(
+                highlight_path=False,
+                highlight_miss_zone=input_data.decision.upper() == "NOT OUT",
+                decision_overlay_color="green" if input_data.decision.upper() == "NOT OUT" else "red"
+            )
+        )
+    
+    # Type 3: Bat edge detection
+    if input_data.bat_edge_detected is not None and input_data.bat_edge_detected:
+        trajectory_path = input_data.ball_trajectory if input_data.ball_trajectory else []
+        
+        # Create trajectory summary if we have trajectory data
+        trajectory_summary = None
+        if trajectory_path:
+            trajectory_summary = TrajectorySummary(
+                initial_point=trajectory_path[0].dict(),
+                final_point=trajectory_path[-1].dict(),
+                closest_to_stumps=input_data.stump_coordinates.dict() if input_data.stump_coordinates else STUMP_CENTER.dict(),
+                stump_hit_prediction=False  # Bat edge means not out, so no stump hit
+            )
+            
+        return LBWOutput(
+            timestamp=datetime.now().isoformat(),
+            final_decision="Not Out",
+            decision_reason="Bat edge detected",
+            trajectory_summary=trajectory_summary,
+            visual_decision=VisualDecision(
+                highlight_path=True,
+                highlight_miss_zone=False,
+                decision_overlay_color="green"
+            ),
+            bat_edge_detected=True,
+            confidence=1.0  # High confidence for bat edge detection
+        )
+    
+    # Type 1: Trajectory-based input
+    # Get the trajectory path from whichever field it's in
+    trajectory_path = None
+    if input_data.predicted_trajectory:
+        trajectory_path = input_data.predicted_trajectory
+    elif input_data.predicted_path:
+        trajectory_path = input_data.predicted_path
+    elif input_data.ball_trajectory:
+        trajectory_path = input_data.ball_trajectory
+    
+    if not trajectory_path:
+        raise ValueError("No trajectory data found in input")
+    
+    # If the input already has a decision, use it
+    if input_data.decision:
+        will_hit, overlap_percentage = False, 0.0
+        if input_data.decision.upper() == "OUT":
+            will_hit, overlap_percentage = True, 100.0
     else:
-        swing_description = "no significant swing"
-
-    if will_hit_stumps:
-        decision = "Out"
-        explanation = f"Ball projected to hit the stumps ({overlap_percentage:.1f}% overlap) {swing_description}"
+        # Otherwise, calculate if the ball will hit the stumps
+        will_hit, overlap_percentage = _will_hit_stumps(trajectory_path)
+    
+    # Determine swing characteristics
+    swing_type, swing_angle = "none", 0.0
+    if input_data.swing_characteristics:
+        swing_type = input_data.swing_characteristics.direction
+        swing_angle = input_data.swing_characteristics.lateral_movement * 10.0
+    elif input_data.swing_type:
+        swing_type, swing_angle = _analyse_swing(trajectory_path)
+    
+    # Create the decision reason
+    if will_hit:
+        decision_reason = f"Ball projected to hit the stumps ({overlap_percentage:.1f}% overlap)"
+        if swing_type != "none":
+            decision_reason += f" with {swing_type} ({swing_angle:.1f}°)"
+        else:
+            decision_reason += " no significant swing"
     else:
-        decision = "Not Out"
-        explanation = f"Ball projected to miss the stumps {swing_description}"
-
-    trajectory = TrajectorySummary(
-        initial_point=input_data.predicted_path[0].model_dump(),
-        final_point=input_data.predicted_path[-1].model_dump(),
-        closest_to_stumps=STUMP_CENTER.model_dump(),
-        stump_hit_prediction=will_hit_stumps
+        decision_reason = "Ball missing the stumps"
+        if swing_type != "none":
+            decision_reason += f" with {swing_type} ({swing_angle:.1f}°)"
+    
+    # Create the trajectory summary
+    trajectory_summary = TrajectorySummary(
+        initial_point=trajectory_path[0].dict(),
+        final_point=trajectory_path[-1].dict(),
+        closest_to_stumps=STUMP_CENTER.dict(),
+        stump_hit_prediction=will_hit
     )
-
-    visuals = VisualDecision(
+    
+    # Create the visual decision
+    visual_decision = VisualDecision(
         highlight_path=True,
-        highlight_miss_zone=not will_hit_stumps,
-        decision_overlay_color="red" if decision == "Out" else "green"
+        highlight_miss_zone=not will_hit,
+        decision_overlay_color="red" if will_hit else "green"
     )
-
+    
+    # Create the output
     return LBWOutput(
-        timestamp=datetime.utcnow().isoformat(),
-        final_decision=decision,
-        decision_reason=explanation,
-        trajectory_summary=trajectory,
-        visual_decision=visuals
+        timestamp=datetime.now().isoformat(),
+        final_decision="Out" if will_hit else "Not Out",
+        decision_reason=decision_reason,
+        trajectory_summary=trajectory_summary,
+        visual_decision=visual_decision,
+        confidence=input_data.confidence if input_data.confidence else (overlap_percentage / 100.0 if will_hit else 0.0)
     )
 
 
