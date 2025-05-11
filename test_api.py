@@ -84,7 +84,6 @@ def run_tests():
 
         if r.status_code != 200:
             print(f"❌  {label:14s} → HTTP {r.status_code}")
-            print(r.text)
             continue
 
         data = r.json()
