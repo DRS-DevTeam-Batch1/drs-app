@@ -1,10 +1,8 @@
-markdown
-# Trajectory Analysis API Documentation
 
-## API Endpoint
-POST /analyze_trajectory
+# Trajectory Analysis Documentation
 
 ## Request Schema
+
 ```json
 {
   "bat_edge_detected": "boolean | Required",
@@ -31,28 +29,33 @@ POST /analyze_trajectory
     "y": "float | Required",
     "z": "float | Required"
   },
-  // Optional fields (ignored in analysis)
   "contact_time": "float | Optional",
   "contact_distance": "float | Optional"
 }
-Response Schemas
-Case 1: Bat Edge Detected
-When: bat_edge_detected = true
-Response:
+```
 
-json
+---
+
+## Response Schemas
+
+### Case 1: Bat Edge Detected
+**Condition:** `bat_edge_detected = true`
+
+```json
 {
   "decision": "NOT OUT",
   "reason": "Bat edge detected",
-  // Optional fields echoed back
   "contact_time": "float | Optional",
   "contact_distance": "float | Optional"
 }
-Case 2: Trajectory Analysis Results
-When: bat_edge_detected = false
-Response:
+```
 
-json
+---
+
+### Case 2: Trajectory Analysis Results
+**Condition:** `bat_edge_detected = false`
+
+```json
 {
   "decision": "OUT | NOT OUT",
   "confidence": "float (0.0-1.0)",
@@ -82,18 +85,27 @@ json
     "type": "conventional | reverse | none"
   }
 }
-Case 3: Error Responses
-Status Code: 4xx or 5xx
-Response:
+```
 
-json
+---
+
+### Case 3: Error Responses
+**Status Code:** 4xx or 5xx
+
+```json
 {
   "error": "string",
   "missing_fields": ["string"] | Optional
 }
-Example Requests
-Sample Input
-json
+```
+
+---
+
+## Example Requests
+
+### Sample Input
+
+```json
 {
   "bat_edge_detected": false,
   "ball_trajectory": [
@@ -106,8 +118,13 @@ json
   "contact_time": 0.01,
   "contact_distance": 0.049
 }
-Sample Success Response
-json
+```
+
+---
+
+### Sample Success Response
+
+```json
 {
   "decision": "OUT",
   "confidence": 0.82,
@@ -124,13 +141,24 @@ json
     "type": "conventional"
   }
 }
-Sample Error Response
-json
+```
+
+---
+
+### Sample Error Response
+
+```json
 {
   "error": "Missing required fields",
   "missing_fields": ["stump_coordinates"]
 }
+```
 
+---
+
+## Python Example Code
+
+```python
 import requests
 
 payload = {
@@ -148,3 +176,4 @@ response = requests.post(
 )
 
 print(response.json())
+```
