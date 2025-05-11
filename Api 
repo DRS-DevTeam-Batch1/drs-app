@@ -79,3 +79,20 @@ json
 }
 Purpose:
 Generate a 3D plot of the ball’s trajectory (for debugging/analysis).
+
+
+
+Required Fields:
+
+bat_edge_detected must be false to trigger trajectory analysis.
+
+ball_trajectory, bat_position, batsman_leg_position, and stump_coordinates are mandatory.
+
+Error Handling:
+
+Returns 400 if fields are missing.
+
+Returns 500 for internal errors (e.g., model loading failures).
+
+Default Port:
+The service runs on 6051 unless overridden via the PORT environment variable.
