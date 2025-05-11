@@ -98,44 +98,43 @@ def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
         return "inswing", abs(deviation) * 10.0
     return "none", abs(deviation) * 10.0
 
+def process_decision(input_data: LBWInput) -> LBWOutput:
+    swing_type, swing_angle = _analyse_swing(input_data.predicted_path)
+    will_hit_stumps, overlap_percentage = _will_hit_stumps(input_data.predicted_path)
 
-def process_decision(inp: LBWInput) -> LBWOutput:
-    swing_type, swing_deg = _analyse_swing(inp.predicted_path)
-    stump_hit, hit_pct = _will_hit_stumps(inp.predicted_path)
-
-    swing_label = (
-        f"{swing_type} swing ({swing_deg:.1f}°)" if swing_type != "none" else "no significant swing"
-    )
-
-    if stump_hit:
-        final = "Out"
-        reason = f"Ball projected to hit the stumps ({hit_pct:.1f}% overlap) {swing_label}"
+    if swing_type != "none":
+        swing_description = f"{swing_type} swing ({swing_angle:.1f}°)"
     else:
-        final = "Not Out"
-        reason = f"Ball projected to miss the stumps {swing_label}"
+        swing_description = "no significant swing"
 
+    if will_hit_stumps:
+        decision = "Out"
+        explanation = f"Ball projected to hit the stumps ({overlap_percentage:.1f}% overlap) {swing_description}"
+    else:
+        decision = "Not Out"
+        explanation = f"Ball projected to miss the stumps {swing_description}"
 
-    traj_sum = TrajectorySummary(
-        initial_point=inp.predicted_path[0].model_dump(),
-        final_point=inp.predicted_path[-1].model_dump(),
+    trajectory = TrajectorySummary(
+        initial_point=input_data.predicted_path[0].model_dump(),
+        final_point=input_data.predicted_path[-1].model_dump(),
         closest_to_stumps=STUMP_CENTER.model_dump(),
-        stump_hit_prediction=stump_hit,
+        stump_hit_prediction=will_hit_stumps
     )
 
-
-    visual = VisualDecision(
+    visuals = VisualDecision(
         highlight_path=True,
-        highlight_miss_zone=not stump_hit,
-        decision_overlay_color="red" if final == "Out" else "green",
+        highlight_miss_zone=not will_hit_stumps,
+        decision_overlay_color="red" if decision == "Out" else "green"
     )
 
     return LBWOutput(
         timestamp=datetime.utcnow().isoformat(),
-        final_decision=final,
-        decision_reason=reason,
-        trajectory_summary=traj_sum,
-        visual_decision=visual,
+        final_decision=decision,
+        decision_reason=explanation,
+        trajectory_summary=trajectory,
+        visual_decision=visuals
     )
+
 
 def analyze_swing_detailed(input_data: LBWInput) -> SwingAnalysisOutput:
     swing_type = input_data.swing_type
