@@ -2,9 +2,13 @@ from flask import Flask, request, jsonify
 import json
 import os
 from trajectory_analysis import TrajectoryAnalysisWithML, predict_trajectory
+import requests
 
 app = Flask(__name__)
 _port = 6051
+
+#currently set path to decision. change if ports are changed.
+DECISION_API_URL = os.getenv("DECISION_API_URL", "http://localhost:8000/api/lbw-decision")
 
 @app.route("/health", methods=["GET"])
 def health_check():
@@ -94,6 +98,17 @@ def analyze_trajectory():
             model_path=model_path
         )
         
+        #call the next module (decision api) || TO DISABLE IT COMMENT IT OUT
+        #make sure their server is running first, if ports are modified then DECISION_API_URL
+        #should be modified accordingly
+        decision_response = requests.post(
+            DECISION_API_URL,
+            json=results,
+            timeout=2.0 
+        )
+        #sent request to decision. No need to send decision_response back to bat_edge.
+        #because it is using forward approach
+
         # Return results
         return jsonify(results), 200
         
@@ -137,7 +152,7 @@ def test_endpoint():
     """
     Test endpoint with sample data
     """
-    # Example data
+    # Example data for test end point
     ball_path = [
         {"x": 0.1, "y": 1.8, "z": 0.0, "t": 0.0},
         {"x": 0.15, "y": 1.7, "z": 2.0, "t": 0.1},
