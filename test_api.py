@@ -98,7 +98,10 @@ def make_type2_case(label: str) -> Tuple[str, dict]:
     )
 
 def make_type3_case(label: str) -> Tuple[str, dict]:
-    """Create a Type 3 input case with bat edge detection and ball trajectory."""
+    """
+    Generate a Type 3 case representing a bat edge detection scenario
+    with associated ball trajectory and positional data.
+    """
     return (
         label,
         {
@@ -115,7 +118,6 @@ def make_type3_case(label: str) -> Tuple[str, dict]:
             "stump_coordinates": {"x": 0.7, "y": 0.85, "z": 0.2}
         }
     )
-
 # ──────────────────────────────
 #  Original test cases (legacy format)
 # ──────────────────────────────
