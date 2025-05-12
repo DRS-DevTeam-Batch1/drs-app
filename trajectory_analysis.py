@@ -91,6 +91,12 @@ class TrajectoryAnalysis:
         Analyze the swing characteristics of the ball
         """
         # Calculate lateral movement (x-direction)
+        if len(x_points) <= 3:
+            self.swing_characteristics['lateral_movement'] = 0.0
+            self.swing_characteristics['direction'] = "straight"
+            self.swing_characteristics['rate'] = 0.0
+            self.swing_characteristics['type'] = "conventional swing"
+            return
         if len(x_points) > 3:
             x_movement = x_points[-1] - x_points[0]
             self.swing_characteristics['lateral_movement'] = x_movement
@@ -121,21 +127,69 @@ class TrajectoryAnalysis:
                         self.swing_characteristics['type'] = "conventional swing"
     
     def predict_future_trajectory(self, ball_path: List[Dict], 
-                                 leg_position: Dict, stump_position: Dict) -> None:
+                             leg_position: Dict, stump_position: Dict) -> None:
         """
         Predict the future trajectory of the ball after impact with leg
+        Handles cases with insufficient or identical points by returning default values
         """
-        # Extract last few points before impact to fit trajectory
-        if len(ball_path) >= 3:
-            # Use points before impact to fit a polynomial
-            pre_impact_points = ball_path[-3:]  # Last 3 points before impact
-            
-            # Extract coordinates
-            t_pre = [p['t'] for p in pre_impact_points]
-            x_pre = [p['x'] for p in pre_impact_points]
-            y_pre = [p['y'] for p in pre_impact_points]
-            z_pre = [p['z'] for p in pre_impact_points]
-            
+        # Reset predicted trajectory
+        self.predicted_trajectory = []
+        
+        # Handle cases with insufficient or identical points
+        if len(ball_path) < 2:
+            # If only one point or no points, use leg position as the only point
+            temp = {
+                'x': float(leg_position['x']),
+                'y': float(leg_position['y']),
+                'z': float(leg_position['z']),
+                't': float(ball_path[0]['t']) if len(ball_path) == 1 else 1.0
+            }
+            self.predicted_trajectory.append(temp)
+            return
+        
+        # Check if all points are identical (same coordinates)
+        first_point = ball_path[0]
+        all_identical = True
+        for point in ball_path[1:]:
+            if (point['x'] != first_point['x'] or 
+                point['y'] != first_point['y'] or 
+                point['z'] != first_point['z']):
+                all_identical = False
+                break
+        
+        if all_identical:
+            # If all points are identical, use leg position as the only point
+            temp = {
+                'x': float(leg_position['x']),
+                'y': float(leg_position['y']),
+                'z': float(leg_position['z']),
+                't': float(ball_path[0]['t']) if len(ball_path) == 1 else 1.0
+            }
+            self.predicted_trajectory.append(temp)
+            return
+        
+        # Check if time is not changing (would cause division by zero)
+        if len(ball_path) >= 2 and ball_path[-1]['t'] == ball_path[0]['t']:
+            # If time isn't changing, use leg position as the only point
+            temp = {
+                'x': float(leg_position['x']),
+                'y': float(leg_position['y']),
+                'z': float(leg_position['z']),
+                't': float(ball_path[-1]['t'])
+            }
+            self.predicted_trajectory.append(temp)
+            return
+        
+        # Original trajectory prediction code for normal cases
+        pre_impact_points = ball_path[-3:]  # Last 3 points before impact
+        
+        # Extract coordinates
+        t_pre = [p['t'] for p in pre_impact_points]
+        x_pre = [p['x'] for p in pre_impact_points]
+        y_pre = [p['y'] for p in pre_impact_points]
+        z_pre = [p['z'] for p in pre_impact_points]
+        
+        try:
             # Fit polynomial functions to the pre-impact trajectory
             x_poly = np.polyfit(t_pre, x_pre, 1)  # Linear fit for x
             y_poly = np.polyfit(t_pre, y_pre, 2)  # Quadratic fit for y (parabolic)
@@ -157,9 +211,7 @@ class TrajectoryAnalysis:
                 t_future = np.linspace(last_t, last_t + time_to_stumps, num_points)
                 
                 # Calculate future positions
-                self.predicted_trajectory = []
                 for t in t_future:
-                    # Apply physics model: initial velocity + gravity + simple air resistance
                     time_delta = t - last_t
                     
                     # x-coordinate (lateral movement)
@@ -177,6 +229,15 @@ class TrajectoryAnalysis:
                         'z': float(z_pred),
                         't': float(t)
                     })
+        except:
+            # If any error occurs in prediction, fall back to leg position
+            temp = {
+                'x': float(leg_position['x']),
+                'y': float(leg_position['y']),
+                'z': float(leg_position['z']),
+                't': float(ball_path[-1]['t']) if ball_path else 1.0
+            }
+            self.predicted_trajectory.append(temp)
     
     def check_stumps_hit(self, stump_position: Dict) -> bool:
         """
@@ -506,7 +567,32 @@ def predict_trajectory(ball_path, stump_position, bat_position, leg_position, mo
     Returns:
         Dictionary with analysis results
     """
+    temp = {
+                'x': float(leg_position['x']),
+                'y': float(leg_position['y']),
+                'z': float(leg_position['z']),
+                't': float(ball_path[0]['t']) if len(ball_path) == 1 else 1.0
+            }
+
+    default_result = {
+        'decision': 'NOT OUT',  # Safest default decision
+        'confidence': 0.5,      # Neutral confidence
+        'predicted_trajectory': [temp],
+        'impact_location': leg_position,
+        'bounce_point': None,
+        'swing_characteristics': {
+            'lateral_movement': 0.0,
+            'direction': "straight",
+            'rate': 0.0,
+            'type': "conventional swing"
+        }
+    }
+
+    if len(ball_path) <= 2:
+        return default_result
+
     # Always use the combined ML and physics analysis
+    
     analyzer = TrajectoryAnalysisWithML(model_path=model_path)
     results = analyzer.analyze_trajectory(ball_path, stump_position, bat_position, leg_position)
     
