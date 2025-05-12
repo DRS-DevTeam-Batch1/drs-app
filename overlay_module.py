@@ -119,6 +119,7 @@ class CricketDRSOverlay:
             # Draw player (simple circle for demonstration)
             cv2.circle(frame, (x_px, y_px), 15, color, -1)
 
+
     def _draw_trajectory_on_frame(self, frame, frame_idx):
         """Draw trajectory and players on frame"""
         overlay = frame.copy()
@@ -153,6 +154,7 @@ class CricketDRSOverlay:
             cv2.circle(overlay, (x_px, y_px), 3, self.COLORS["stumps"], -1)
 
         return overlay
+
 
     def _add_decision_graphics(self, frame, frame_idx):
         """Add decision overlay graphics"""

@@ -1,0 +1,44 @@
+input:
+
+{
+  "predicted_path": [
+    { "x": 2.0, "y": 0.8, "z": 0.3, "t": 0.1 },
+    { "x": 1.8, "y": 0.6, "z": 0.2, "t": 0.1 }
+  ],
+  "impact_location": { "x": 1.6, "y": 0.4, "z": 0.1 },
+  "bounce_point": { "x": 2.2, "y": 1.0, "z": 0.0 },
+  "swing_type": "inswing"
+}
+
+output format:
+
+{
+  "decision_reason": "Ball projected to hit the stumps (100.0% overlap) no significant swing",
+  "final_decision": "Out",
+  "timestamp": "2025-05-03T06:44:00.961750",
+  "trajectory_summary": {
+    "closest_to_stumps": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.71
+    },
+    "final_point": {
+      "t": 0.8,
+      "x": 0.02,
+      "y": 0.02,
+      "z": 0.71
+    },
+    "initial_point": {
+      "t": 0.0,
+      "x": 0.3,
+      "y": 1.5,
+      "z": 1.0
+    },
+    "stump_hit_prediction": true
+  },
+  "visual_decision": {
+    "decision_overlay_color": "red",
+    "highlight_miss_zone": false,
+    "highlight_path": true
+  }
+}

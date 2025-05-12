@@ -1,3 +1,12 @@
+# Group Members
+
+- Mujtaba Ahmed
+- Ahmad Abdul Rehman
+- Hassaan Raza
+- Burhan Bhatti
+- Ibrahim Sohail
+- M.Fahad
+
 # Stream Analysis and Display Module
 
 Processes trajectory data from ball tracking inputs to render real-time overlays for cricket Decision Review System (DRS).
