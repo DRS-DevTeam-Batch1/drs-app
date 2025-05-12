@@ -1,22 +1,23 @@
-# 🧠 LBW Decision Making Logic Module - DRS System
+# LBW Decision Making Logic Module - DRS System
 
 Welcome to the **Decision Making Logic Module** of the ThirdEyeDRS Project! This module analyzes bat contact, predicted trajectory, and player/stump positions to determine the final umpiring decision. 🏏
 
 ---
 
-## 📌 Overview
+## Overview
 
 The Decision Making Module consolidates inputs from multiple upstream modules to render a final decision (Out, Not Out, Edge Detected, Decision Overturned/Upheld) based on the cricket rules and trajectory analysis.
-
+The input data is taken from module 3 and module 4. 
 ---
 
-## 🛠 Inputs
+## Inputs
 
 This module receives structured data from previous stages, the trajectory analysis module 4:
 
-- 🔄 **Bat Edge Detection Module**
+- **Bat Edge Detection Module**
   - `bat_contact: bool`
-- 📍 **Trajectory Analysis Module**
+
+-  **Trajectory Analysis Module**
   - `predicted_trajectory: List[(x, y, z)]`
   - `impact_location: (x, y)`
   - `bounce_point: (x, y)`
@@ -27,25 +28,24 @@ This module receives structured data from previous stages, the trajectory analys
 
 ---
 
-## 📤 Outputs
+## Output
 
 The final result will be:
 
-- ✅ `decision: str` — (Out / Not Out / Edge Detected)
-- 🖼️ `decision_metadata: dict` — Data to be visualized on stream
-  - Includes trajectory overlay, impact marker, bat edge indicator, etc.
+-  `decision: str` — (Out / Not Out / Edge Detected)
+- `decision_metadata: dict` — Data to be visualized on stream
 
 ---
 
-## ⚙️ LBW Decision Logic
+## LBW Decision Logic
 
-### 📥 Step 1: Parse Trajectory Output
+### Step 1: Parsing Trajectory Output
 
 ````python
 impact_x, impact_y = impact_location
 ball_path = predicted_trajectory
 
-# 🧩 Step 2: Extract Parameters
+# Step 2: Extract Parameters
 
 - **Bat Contact**:
   - Check if the ball has made contact with the bat.
