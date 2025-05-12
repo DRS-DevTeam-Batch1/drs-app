@@ -1,16 +1,18 @@
 import uvicorn
 import os
-from src.main import app
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    host = os.environ.get("HOST", "0.0.0.0")
-    log_level = os.environ.get("LOG_LEVEL", "info")
-    
+def main():
+    server_host = os.getenv("HOST", "0.0.0.0")
+    server_port = int(os.getenv("PORT", 8000))
+    server_log_level = os.getenv("LOG_LEVEL", "info")
+
     uvicorn.run(
         "server:app",
-        host=host,
-        port=port,
-        log_level=log_level,
+        host=server_host,
+        port=server_port,
+        log_level=server_log_level,
         reload=False
     )
+
+if __name__ == "__main__":
+    main()
