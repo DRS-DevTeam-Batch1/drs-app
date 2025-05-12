@@ -8,7 +8,7 @@ app = Flask(__name__)
 _port = 6051
 
 #currently set path to decision. change if ports are changed.
-DECISION_API_URL = os.getenv("DECISION_API_URL", "http://localhost:8000/api/lbw-decision")
+DECISION_API_URL = os.getenv("DECISION_API_URL", "http://0.0.0.0:8001/api/lbw-decision")
 
 @app.route("/health", methods=["GET"])
 def health_check():
@@ -97,20 +97,52 @@ def analyze_trajectory():
             batsman_leg_position,
             model_path=model_path
         )
+        print("Trajectory prediction results:", results)
         
-        #call the next module (decision api) || TO DISABLE IT COMMENT IT OUT
-        #make sure their server is running first, if ports are modified then DECISION_API_URL
-        #should be modified accordingly
-        decision_response = requests.post(
-            DECISION_API_URL,
-            json=results,
-            timeout=2.0 
-        )
-        #sent request to decision. No need to send decision_response back to bat_edge.
-        #because it is using forward approach
-
-        # Return results
-        return jsonify(results), 200
+        # Call the next module (decision API)
+        # Make sure their server is running first
+        try:
+            # Format the data according to what the decision API expects
+            decision_api_data = {
+                "trajectory_summary": {
+                    "initial_point": ball_trajectory[0] if ball_trajectory else {"x": 0, "y": 0, "z": 0, "t": 0},
+                    "final_point": ball_trajectory[-1] if ball_trajectory else {"x": 0, "y": 0, "z": 0, "t": 0},
+                    "closest_to_stumps": {
+                        "x": results.get("impact_location", {}).get("x", 0),
+                        "y": results.get("impact_location", {}).get("y", 0),
+                        "z": results.get("impact_location", {}).get("z", 0)
+                    },
+                    "stump_hit_prediction": results.get("decision") == "OUT"
+                },
+                "bat_edge_detected": data.get("bat_edge_detected", None),
+                "confidence": results.get("confidence", 0.0)
+            }
+            
+            print("Sending to decision API:", json.dumps(decision_api_data, indent=2))
+            
+            decision_response = requests.post(
+                DECISION_API_URL,
+                json=decision_api_data
+            )
+            
+            # Check if the request was successful
+            if decision_response.status_code == 200:
+                # Parse the JSON content from the response
+                decision_result = decision_response.json()
+                print("Decision API response:", decision_result)
+                
+                # Return the decision result directly instead of the trajectory results
+                return jsonify(decision_result), 200
+            else:
+                print(f"Decision API returned error: {decision_response.status_code}")
+                print(f"Response content: {decision_response.text}")
+                # Fall back to trajectory results if decision API fails
+                return jsonify(results), 200
+                
+        except Exception as e:
+            print(f"Error calling decision API: {str(e)}")
+            # Fall back to trajectory results if decision API call fails
+            return jsonify(results), 200
         
     except Exception as e:
         app.logger.error(f"Error processing request: {str(e)}")
@@ -174,7 +206,42 @@ def test_endpoint():
         model_path="trajectory_model.pkl"
     )
     
-    return jsonify(results), 200
+    # Test the decision API as well
+    try:
+        # Format the data according to what the decision API expects
+        decision_api_data = {
+            "trajectory_summary": {
+                "initial_point": ball_path[0] if ball_path else {"x": 0, "y": 0, "z": 0, "t": 0},
+                "final_point": ball_path[-1] if ball_path else {"x": 0, "y": 0, "z": 0, "t": 0},
+                "closest_to_stumps": {
+                    "x": results.get("impact_location", {}).get("x", 0),
+                    "y": results.get("impact_location", {}).get("y", 0),
+                    "z": results.get("impact_location", {}).get("z", 0)
+                },
+                "stump_hit_prediction": results.get("decision") == "OUT"
+            },
+            "bat_edge_detected": None,
+            "confidence": results.get("confidence", 0.0)
+        }
+        
+        print("Test - Sending to decision API:", json.dumps(decision_api_data, indent=2))
+        
+        decision_response = requests.post(
+            DECISION_API_URL,
+            json=decision_api_data
+        )
+        
+        if decision_response.status_code == 200:
+            decision_result = decision_response.json()
+            print("Test decision API response:", decision_result)
+            return jsonify(decision_result), 200
+        else:
+            print(f"Test decision API error: {decision_response.status_code}")
+            print(f"Response content: {decision_response.text}")
+            return jsonify(results), 200
+    except Exception as e:
+        print(f"Error calling test decision API: {str(e)}")
+        return jsonify(results), 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", _port))
