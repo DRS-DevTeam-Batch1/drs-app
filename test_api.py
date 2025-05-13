@@ -4,6 +4,8 @@ from typing import List, Tuple, Dict, Any
 import requests
 import numpy as np
 
+from src.decision_engine import STUMP_HALF_DEPTH
+
 API_URL = "http://localhost:8000/api/lbw-decision"
 
 def make_case(
@@ -47,6 +49,14 @@ def make_case(
             "swing_type": swing_type,
         },
     )
+
+def make_bounce_outside_leg_case(label: str, bounce_y: float):
+    return label, {
+        # ... all other fields None or omitted per your model defaults ...
+        "bounce_point": {"x": 0.4, "y": bounce_y, "z": 0.0}
+    }
+
+
 
 def make_type1_case(label: str) -> Tuple[str, dict]:
     """Create a Type 1 input case with trajectory and swing characteristics."""
@@ -142,9 +152,18 @@ new_format_cases: List[Tuple[str, dict]] = [
     make_type3_case("Type3-BatEdge"),
 ]
 
+
+
 # Combine all test cases
 test_cases = out_cases + not_out_cases + new_format_cases
 
+leg_line = 0.0 - STUMP_HALF_DEPTH  # e.g., -0.02
+bounce_out_cases = [
+    make_bounce_outside_leg_case("Pitch-O-1", leg_line - 0.01),
+    make_bounce_outside_leg_case("Pitch-O-2", leg_line - 0.02),
+    make_bounce_outside_leg_case("Pitch-O-3", leg_line - 0.05),
+]
+test_cases += bounce_out_cases
 
 # ──────────────────────────────
 # Execute
