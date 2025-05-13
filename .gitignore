@@ -2,3 +2,5 @@ __pycache__
 env
 sample_output.json
 venv
+config.bat
+node_modules
