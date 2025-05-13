@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+import traceback
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -24,6 +25,12 @@ app.add_middleware(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+@app.exception_handler(Exception)
+async def log_exceptions(request: Request, exc: Exception):
+    # Print full traceback to stderr
+    traceback.print_exc(file=sys.stderr)
+    return JSONResponse(status_code=500, content={"detail": repr(exc)})
 
 
 @app.post("/api/lbw-decision", response_model=LBWOutput)
