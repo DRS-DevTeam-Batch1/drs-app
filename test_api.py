@@ -181,7 +181,7 @@ test_cases += bounce_out_cases
 impact_cases = [
     make_impact_case("Impact-1", leg_line - 0.01),
     make_impact_case("Impact-2", leg_line  - 0.02),
-    make_impact_case("Impact-3", leg_line - 0.005),
+    make_impact_case("Impact-3", leg_line - 0.003),
 ]
 
 # Then add into your suite:
