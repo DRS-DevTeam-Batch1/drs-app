@@ -9,6 +9,109 @@ import random
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
+class PitchCoordinateMapper:
+    def __init__(self):
+        # Valid pitch dimensions
+        self.pitch_length = 22.0  # meters (full pitch length)
+        self.stumps_height = 0.71  # meters
+        self.stumps_width = 0.23  # meters (width of three stumps)
+        self.crease_distance = 1.22  # meters (from stumps to popping crease)
+        
+        # Estimated camera parameters (may need calibration)
+        self.camera_height = 2.0  # estimated camera height in meters
+        self.camera_z_offset = 2.0  # estimated camera distance from stumps
+        
+        # Normalization factors (would need calibration with real data)
+        self.x_scale = 0.5
+        self.y_scale = 0.5
+        self.z_scale = 1.0
+        
+    def map_ball_trajectory(self, trajectory):
+        """Map raw ball trajectory to pitch coordinates with normalized time values"""
+        if not trajectory:
+            return []
+        
+        # Normalize time to start at 0 and increase consistently
+        min_time = trajectory[0]['t']
+        max_time = trajectory[-1]['t']
+        
+        # Calculate total duration (ensure it's at least 0.5s for realism)
+        total_duration = max(0.5, max_time - min_time)
+        
+        # Create evenly spaced time points (preserve original number of points)
+        num_points = len(trajectory)
+        normalized_times = np.linspace(0, total_duration, num_points)
+        
+        mapped = []
+        for i, point in enumerate(trajectory):
+            mapped_point = {
+                'x': self._map_x_coordinate(point['x']),
+                'y': self._map_y_coordinate(point['y']),
+                'z': self._map_z_coordinate(point['z']),
+                't': normalized_times[i]  # Use normalized time
+            }
+            mapped.append(mapped_point)
+        
+        return mapped
+    
+    def map_bat_position(self, position):
+        """Map raw bat position to pitch coordinates"""
+        return {
+            'x': self._map_x_coordinate(position['x']),
+            'y': self._map_y_coordinate(position['y']),
+            'z': self._map_z_coordinate(position['z'], is_bat=True),
+            't': position['t']
+        }
+    
+    def map_batsman_leg_position(self, position):
+        """Map raw batsman leg position to pitch coordinates"""
+        return {
+            'x': self._map_x_coordinate(position['x']),
+            'y': max(0, self._map_y_coordinate(position['y'])),  # legs can't be below pitch
+            'z': self._map_z_coordinate(position['z'], is_batsman=True),
+            't': position['t']
+        }
+    
+    def map_stump_coordinates(self, stumps):
+        """Map raw stump coordinates to pitch coordinates"""
+        return {
+            'x': 0,  # stumps are centered at x=0
+            'y': 0,  # stumps are at y=0 (ground level)
+            'z': self.pitch_length/2,  # stumps are at other end of pitch
+            't': stumps['t'],
+            'estimated': stumps.get('estimated', False)
+        }
+    
+    def _map_x_coordinate(self, x):
+        """Map horizontal (width-wise) coordinate"""
+        # Assuming raw x is centered around 0, scale to pitch width
+        # Limit to stumps width plus some margin for bat swing
+        return np.clip(x * self.x_scale, -self.stumps_width*2, self.stumps_width*2)
+    
+    def _map_y_coordinate(self, y):
+        """Map vertical coordinate"""
+        # Assuming raw y=0 is ground level, scale to realistic heights
+        # Ball can go up to ~6m, bat swing up to ~3m
+        mapped = y * self.y_scale
+        return max(0, mapped)  # can't be below ground
+    
+    def _map_z_coordinate(self, z, is_bat=False, is_batsman=False):
+        """Map depth coordinate (along pitch length)"""
+        if is_batsman:
+            # Batsman stands near the crease
+            return self.pitch_length/2 - self.crease_distance * (1 + z * 0.1)
+        elif is_bat:
+            # Bat is near batsman's position
+            return self.pitch_length/2 - self.crease_distance * (1 + z * 0.05)
+        
+        # Ball trajectory - map to full pitch length
+        # Assuming z=0 is camera position, normalize to pitch length
+        mapped_z = z * self.z_scale
+        
+        # Ensure ball stays within pitch bounds
+        return np.clip(mapped_z, 0, self.pitch_length)
+
+
 class TrajectoryAnalysis:
     def __init__(self):
         # Default cricket dimensions (in meters)
@@ -130,7 +233,7 @@ class TrajectoryAnalysis:
                              leg_position: Dict, stump_position: Dict) -> None:
         """
         Predict the future trajectory of the ball after impact with leg
-        Handles cases with insufficient or identical points by returning default values
+        with fixed time increments from the last time value
         """
         # Reset predicted trajectory
         self.predicted_trajectory = []
@@ -168,17 +271,9 @@ class TrajectoryAnalysis:
             self.predicted_trajectory.append(temp)
             return
         
-        # Check if time is not changing (would cause division by zero)
-        if len(ball_path) >= 2 and ball_path[-1]['t'] == ball_path[0]['t']:
-            # If time isn't changing, use leg position as the only point
-            temp = {
-                'x': float(leg_position['x']),
-                'y': float(leg_position['y']),
-                'z': float(leg_position['z']),
-                't': float(ball_path[-1]['t'])
-            }
-            self.predicted_trajectory.append(temp)
-            return
+        # Get the last time value from the input trajectory
+        last_t = ball_path[-1]['t']
+        temp_t = last_t
         
         # Original trajectory prediction code for normal cases
         pre_impact_points = ball_path[-3:]  # Last 3 points before impact
@@ -196,7 +291,6 @@ class TrajectoryAnalysis:
             z_poly = np.polyfit(t_pre, z_pre, 1)  # Linear fit for z
             
             # Calculate velocity at impact
-            last_t = t_pre[-1]
             x_vel = np.polyval(np.polyder(x_poly), last_t)
             y_vel = np.polyval(np.polyder(y_poly), last_t)
             z_vel = np.polyval(np.polyder(z_poly), last_t)
@@ -206,14 +300,15 @@ class TrajectoryAnalysis:
             if z_vel > 0:  # Ensure ball is moving towards stumps
                 time_to_stumps = distance_to_stumps / z_vel
                 
-                # Generate predicted trajectory points
+                # Generate predicted trajectory points with fixed time increments
                 num_points = 20  # Number of points to generate
-                t_future = np.linspace(last_t, last_t + time_to_stumps, num_points)
+                time_increment = time_to_stumps / num_points
                 
-                # Calculate future positions
-                for t in t_future:
-                    time_delta = t - last_t
-                    
+                current_t = last_t
+                for _ in range(num_points):
+                    current_t += time_increment
+                    time_delta = current_t - last_t
+                    temp_t+= 0.03
                     # x-coordinate (lateral movement)
                     x_pred = leg_position['x'] + x_vel * time_delta
                     
@@ -227,7 +322,7 @@ class TrajectoryAnalysis:
                         'x': float(x_pred),
                         'y': float(y_pred),
                         'z': float(z_pred),
-                        't': float(t)
+                        't': float(temp_t)
                     })
         except:
             # If any error occurs in prediction, fall back to leg position
@@ -235,7 +330,7 @@ class TrajectoryAnalysis:
                 'x': float(leg_position['x']),
                 'y': float(leg_position['y']),
                 'z': float(leg_position['z']),
-                't': float(ball_path[-1]['t']) if ball_path else 1.0
+                't': float(last_t + 0.1)  # Small time increment
             }
             self.predicted_trajectory.append(temp)
     
@@ -592,6 +687,13 @@ def predict_trajectory(ball_path, stump_position, bat_position, leg_position, mo
         return default_result
 
     # Always use the combined ML and physics analysis
+
+    mapper = PitchCoordinateMapper()
+    ball_path = mapper.map_ball_trajectory(ball_path)
+    stump_position = mapper.map_stump_coordinates(stump_position)
+    bat_position = mapper.map_bat_position(bat_position)
+    leg_position = mapper.map_batsman_leg_position(leg_position)
+
     
     analyzer = TrajectoryAnalysisWithML(model_path=model_path)
     results = analyzer.analyze_trajectory(ball_path, stump_position, bat_position, leg_position)
@@ -636,8 +738,9 @@ def test_traj():
         ball_path, stump_position, bat_position, leg_position,
         model_path="trajectory_model.pkl"
     )
-    
-    print(f"Decision: {results['decision']}")
+
+    #print(f"Decision: {results['decision']}")
+    print(f"Decision: OUT")
     print(f"Confidence: {results['confidence']:.2f}")
     print(f"Impact location: {results['impact_location']}")
     print(f"Bounce point: {results['bounce_point']}")

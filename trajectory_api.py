@@ -104,18 +104,10 @@ def analyze_trajectory():
         try:
             # Format the data according to what the decision API expects
             decision_api_data = {
-                "trajectory_summary": {
-                    "initial_point": ball_trajectory[0] if ball_trajectory else {"x": 0, "y": 0, "z": 0, "t": 0},
-                    "final_point": ball_trajectory[-1] if ball_trajectory else {"x": 0, "y": 0, "z": 0, "t": 0},
-                    "closest_to_stumps": {
-                        "x": results.get("impact_location", {}).get("x", 0),
-                        "y": results.get("impact_location", {}).get("y", 0),
-                        "z": results.get("impact_location", {}).get("z", 0)
-                    },
-                    "stump_hit_prediction": results.get("decision") == "OUT"
-                },
-                "bat_edge_detected": data.get("bat_edge_detected", None),
-                "confidence": results.get("confidence", 0.0)
+                "predicted_path": results.get("predicted_trajectory", []),
+                "impact_location": results.get("impact_location", {}),
+                "bounce_point": results.get("bounce_point", {}),
+                "swing_type": results.get("swing_characteristics", {}).get("type", "conventional swing")
             }
             
             print("Sending to decision API:", json.dumps(decision_api_data, indent=2))
