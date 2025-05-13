@@ -56,7 +56,14 @@ def make_bounce_outside_leg_case(label: str, bounce_y: float):
         "bounce_point": {"x": 0.4, "y": bounce_y, "z": 0.0}
     }
 
-
+def make_impact_case(label: str, imp_y: float) -> Tuple[str, dict]:
+    return (
+        label,
+        {
+            # All other fields default to None in LBWInput
+            "impact_location": {"x": 0.0, "y": imp_y, "z": 0.3}
+        },
+    )
 
 def make_type1_case(label: str) -> Tuple[str, dict]:
     """Create a Type 1 input case with trajectory and swing characteristics."""
@@ -157,13 +164,29 @@ new_format_cases: List[Tuple[str, dict]] = [
 # Combine all test cases
 test_cases = out_cases + not_out_cases + new_format_cases
 
-leg_line = 0.0 - STUMP_HALF_DEPTH  # e.g., -0.02
+leg_line = 0.0 - STUMP_HALF_DEPTH
+off_line = 0.0 + STUMP_HALF_DEPTH 
+
+# Add Pitching cases
+
 bounce_out_cases = [
     make_bounce_outside_leg_case("Pitch-O-1", leg_line - 0.01),
     make_bounce_outside_leg_case("Pitch-O-2", leg_line - 0.02),
     make_bounce_outside_leg_case("Pitch-O-3", leg_line - 0.05),
 ]
 test_cases += bounce_out_cases
+
+# Add Impact cases
+
+impact_cases = [
+    make_impact_case("Impact-1", leg_line - 0.01),
+    make_impact_case("Impact-2", leg_line  - 0.02),
+    make_impact_case("Impact-3", leg_line - 0.005),
+]
+
+# Then add into your suite:
+test_cases += impact_cases
+
 
 # ──────────────────────────────
 # Execute
