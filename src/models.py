@@ -71,6 +71,9 @@ class LBWInput(BaseModel):
     batsman_leg_position: Optional[Point3D] = None
     stump_coordinates: Optional[Point3D] = None
 
+    # Pitching specific fields
+    pitch_location: Optional[Point3D] = None
+
 class TrajectorySummary(BaseModel):
     initial_point: dict
     final_point: dict
