@@ -112,6 +112,23 @@ def process_decision(input_data: LBWInput) -> LBWOutput:
     2. Simple decision with just decision and reason
     3. Bat edge detection input with ball trajectory and bat position
     """
+
+    if input_data.pitch_location is not None:
+        pitch_y = input_data.pitch_location.y
+        # For a right-handed batsman, the leg stump lies at y = STUMP_CENTER.y - STUMP_HALF_DEPTH
+        leg_stump_line = STUMP_CENTER.y - STUMP_HALF_DEPTH
+        if pitch_y < leg_stump_line:
+            return LBWOutput(
+                timestamp=datetime.now().isoformat(),
+                final_decision="Not Out",
+                decision_reason="Ball pitched outside leg stump",
+                visual_decision=VisualDecision(
+                    highlight_path=False,
+                    highlight_miss_zone=True,
+                    decision_overlay_color="green"
+                )
+            )
+
     # Determine which type of input we're dealing with
     
     # Type 2: Simple decision with just decision and reason
