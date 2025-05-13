@@ -112,6 +112,7 @@ def process_decision(input_data: LBWInput) -> LBWOutput:
     2. Simple decision with just decision and reason
     3. Bat edge detection input with ball trajectory and bat position
     """
+    # Pitching Analysis: Check if the ball pitched outside leg stump
 
     if input_data.bounce_point is not None:
         bp_y = input_data.bounce_point.y
@@ -128,6 +129,26 @@ def process_decision(input_data: LBWInput) -> LBWOutput:
                     decision_overlay_color="green"
                 )
             )
+    
+    # Impact Analysis: Check if the impact is outside leg stump
+
+    if input_data.impact_location is not None:
+        imp_y = input_data.impact_location.y
+        leg_line = STUMP_CENTER.y - STUMP_HALF_DEPTH
+        off_line = STUMP_CENTER.y + STUMP_HALF_DEPTH
+
+        # If impact outside leg stump, Not Out
+        if imp_y < leg_line:
+            return LBWOutput(
+                timestamp=datetime.now().isoformat(),
+                final_decision="Not Out",
+                decision_reason="Impact outside leg stump",
+                visual_decision=VisualDecision(
+                    highlight_path=False,
+                    highlight_miss_zone=True,
+                    decision_overlay_color="green"
+                )
+        )
 
     # Determine which type of input we're dealing with
     
