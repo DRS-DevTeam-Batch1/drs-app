@@ -7,7 +7,7 @@ def main():
     server_log_level = os.getenv("LOG_LEVEL", "info")
 
     uvicorn.run(
-        "server:app",
+        "src.main:app",
         host=server_host,
         port=server_port,
         log_level=server_log_level,

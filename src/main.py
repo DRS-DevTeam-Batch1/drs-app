@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
-from models import LBWInput, LBWOutput
-from decision_engine import process_decision
+from src.models import LBWInput, LBWOutput
+from src.decision_engine import process_decision
 
 app = FastAPI(
     title="Cricket Decision Review System API",
