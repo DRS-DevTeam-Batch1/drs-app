@@ -113,11 +113,11 @@ def process_decision(input_data: LBWInput) -> LBWOutput:
     3. Bat edge detection input with ball trajectory and bat position
     """
 
-    if input_data.pitch_location is not None:
-        pitch_y = input_data.pitch_location.y
-        # For a right-handed batsman, the leg stump lies at y = STUMP_CENTER.y - STUMP_HALF_DEPTH
-        leg_stump_line = STUMP_CENTER.y - STUMP_HALF_DEPTH
-        if pitch_y < leg_stump_line:
+    if input_data.bounce_point is not None:
+        bp_y = input_data.bounce_point.y
+        # leg stump line (right-hander) at y = STUMP_CENTER.y - STUMP_HALF_DEPTH
+        leg_line = STUMP_CENTER.y - STUMP_HALF_DEPTH
+        if bp_y < leg_line:
             return LBWOutput(
                 timestamp=datetime.now().isoformat(),
                 final_decision="Not Out",
