@@ -18,11 +18,14 @@ from src.models import (
 )
 
 # ──────────────────────────────────────────────────────
-# Fixed ground-truth constants for a middle stump
+# Fixed ground-truth constants for a middle stump (box model)
 # ──────────────────────────────────────────────────────
 STUMP_CENTER: Point3D = Point3D(x=0.0, y=0.0, z=0.71)  # 71 cm = top of stump
-STUMP_RADIUS: float = 0.05  # 5 cm radius for a "clean" hit
-
+# Box half dimensions (meters): width along X, depth along Y
+STUMP_HALF_WIDTH: float = 0.05  # 5 cm half-width
+STUMP_HALF_DEPTH: float = 0.02  # 2 cm half-depth (stump thickness)
+# Margin for confidence calculation
+STUMP_MARGIN: float = 0.10  # 10 cm beyond box for linear confidence
 
 # ──────────────────────────────
 # Small maths helpers
@@ -30,9 +33,9 @@ STUMP_RADIUS: float = 0.05  # 5 cm radius for a "clean" hit
 def _distance(p1: Point3D, p2: Point3D) -> float:
     return ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2 + (p1.z - p2.z) ** 2) ** 0.5
 
+# (velocity and angle helpers unchanged...)
 
 def _velocity(path: List[TrajectoryPoint]) -> float:
-    """Straight-line average velocity between first and last sample (m · s-1)."""
     if len(path) < 2:
         return 0.0
     first, last = path[0], path[-1]
@@ -41,7 +44,6 @@ def _velocity(path: List[TrajectoryPoint]) -> float:
 
 
 def _angle(path: List[TrajectoryPoint]) -> float:
-    """Heading in the horizontal (XY) plane at impact (degrees)."""
     if len(path) < 2:
         return 0.0
     first, last = path[0], path[-1]
@@ -51,25 +53,28 @@ def _angle(path: List[TrajectoryPoint]) -> float:
 
 def _will_hit_stumps(path: List[TrajectoryPoint]) -> Tuple[bool, float]:
     """
-    Returns (is_hit, hit_percentage).
-
-    A clean hit = 100%. Between stump edge (0.05m) and 0.15m we give a linear %
-    to mimic Hawk-Eye confidence.
+    Returns (is_hit, hit_percentage) using a box model around the stumps.
+    A clean hit = 100%. Within STUMP_MARGIN beyond the box gives linear confidence.
     """
     if not path:
         return False, 0.0
 
-    end_point: TrajectoryPoint = path[-1]
-    dist: float = _distance(end_point, STUMP_CENTER)
+    end_pt: TrajectoryPoint = path[-1]
+    dx = abs(end_pt.x - STUMP_CENTER.x)
+    dy = abs(end_pt.y - STUMP_CENTER.y)
 
-    if dist <= STUMP_RADIUS:
+    # Check within box for clean hit
+    if dx <= STUMP_HALF_WIDTH and dy <= STUMP_HALF_DEPTH:
         return True, 100.0
-    if dist <= 0.15:
-        pct: float = max(
-            0.0,
-            100.0 * (1.0 - (dist - STUMP_RADIUS) / (0.15 - STUMP_RADIUS)),
-        )
-        return pct > 0.0, pct
+    # Check within margin region for confidence
+    if dx <= STUMP_HALF_WIDTH + STUMP_MARGIN and dy <= STUMP_HALF_DEPTH + STUMP_MARGIN:
+        # Compute normalized margin distance beyond box
+        mx = max(0.0, dx - STUMP_HALF_WIDTH)
+        my = max(0.0, dy - STUMP_HALF_DEPTH)
+        # use the larger of the two normalized distances
+        norm = max(mx / STUMP_MARGIN, my / STUMP_MARGIN)
+        confidence = max(0.0, 100.0 * (1.0 - norm))
+        return confidence > 0.0, confidence
     return False, 0.0
 
 def _analyse_swing(path: List[TrajectoryPoint]) -> tuple[str, float]:
