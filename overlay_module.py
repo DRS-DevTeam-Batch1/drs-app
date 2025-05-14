@@ -14,21 +14,32 @@ class CricketDRSOverlay:
         self.trajectory_data = trajectory_data
         self.output_path = output_path or f"drs_overlay_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
 
-        # Extract data
-        self.decision = trajectory_data.get("label", "UNKNOWN").upper()
+        # Extract data with correct key names from the provided JSON
+        self.decision = trajectory_data.get("final_decision", trajectory_data.get("decision", "UNKNOWN")).upper()
         self.confidence = trajectory_data.get("confidence", 0.0)
         self.reviewing_team = trajectory_data.get("reviewing_team", "TEAM").upper()
+
+        # Get predicted trajectory with correct key name
         self.predicted_trajectory = trajectory_data.get("predicted_trajectory", [])
-        self.impact_point = trajectory_data.get("impact_point", {})
+
+        # Get impact point with correct key name
+        self.impact_point = trajectory_data.get("impact_location",
+                                                trajectory_data.get("closest_to_stumps", {}))
+
+        # Use provided JSON structure or defaults
         self.bat_coordinates = trajectory_data.get("bat_coordinates", [])
         self.stump_coordinates = trajectory_data.get("stump_coordinates", [])
         self.player_positions = trajectory_data.get("player_positions", [])
 
+        # Process decision elements from available data
+        trajectory_summary = trajectory_data.get("trajectory_summary", {})
+        swing_characteristics = trajectory_data.get("swing_characteristics", {})
+
         # Decision elements
         self.decision_elements = trajectory_data.get("decision_elements", {
-            "wickets": "HITTING",
+            "wickets": "HITTING" if trajectory_summary.get("stump_hit_prediction", False) else "MISSING",
             "impact": "IN-LINE",
-            "pitching": "OUTSIDE OFF"
+            "pitching": swing_characteristics.get("direction", "OUTSIDE OFF")
         })
 
         # Colors (BGR format)
@@ -51,6 +62,11 @@ class CricketDRSOverlay:
             "info_label": (200, 200, 200),  # Light gray
             "confidence_bar": (100, 100, 255),  # Blue
         }
+
+        # Check for custom overlay color in the visual_decision
+        visual_decision = trajectory_data.get("visual_decision", {})
+        if visual_decision.get("decision_overlay_color") == "red":
+            self.COLORS["decision_box"] = (0, 0, 255)  # Red in BGR
 
         # Video properties
         self.cap = cv2.VideoCapture(self.video_path)
@@ -119,7 +135,6 @@ class CricketDRSOverlay:
             # Draw player (simple circle for demonstration)
             cv2.circle(frame, (x_px, y_px), 15, color, -1)
 
-
     def _draw_trajectory_on_frame(self, frame, frame_idx):
         """Draw trajectory and players on frame"""
         overlay = frame.copy()
@@ -155,7 +170,6 @@ class CricketDRSOverlay:
 
         return overlay
 
-
     def _add_decision_graphics(self, frame, frame_idx):
         """Add decision overlay graphics"""
         if frame_idx <= self.frame_count // 4:
@@ -184,7 +198,6 @@ class CricketDRSOverlay:
 
         # Review info
         review_y = self.height - 60
-
 
         return frame
 
@@ -243,8 +256,20 @@ def process_from_json_file(video_path, json_path, output_path=None):
     with open(json_path, 'r') as f:
         trajectory_data = json.load(f)
 
+    if isinstance(trajectory_data, list):
+        # Find the most relevant entry that contains trajectory data
+        for item in trajectory_data:
+            if isinstance(item, dict) and (
+                    "predicted_trajectory" in item or
+                    "trajectory_summary" in item or
+                    "final_decision" in item or
+                    "decision" in item
+            ):
+                trajectory_data = item
+                break
+
     print("Loaded trajectory data:")
-    print(f"- Decision: {trajectory_data.get('label', 'UNKNOWN')}")
+    print(f"- Decision: {trajectory_data.get('final_decision', trajectory_data.get('decision', 'UNKNOWN'))}")
     print(f"- Confidence: {trajectory_data.get('confidence', 0.0) * 100:.1f}%")
     print(f"- Trajectory points: {len(trajectory_data.get('predicted_trajectory', []))}")
 
@@ -254,4 +279,4 @@ def process_from_json_file(video_path, json_path, output_path=None):
 
 if __name__ == "__main__":
     # Example usage with hardcoded paths
-    process_from_json_file("input_cricket_video.mp4", "trajectory_data.json", "output_drs_video.mp4")
+    process_from_json_file("input_cricket_video.mp4", "trajectory_data.json", "output.mp4")
