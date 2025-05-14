@@ -1,0 +1,64 @@
+[
+  {
+    "frame_id": 1,
+    "timestamp": "00:00:00.000",
+    "detections": [
+      { "label": "ball", "bbox": [100, 150, 120, 170] }
+    ]
+  },
+  {
+    "frame_id": 2,
+    "timestamp": "00:00:00.040",
+    "detections": [
+      { "label": "bat", "bbox": [200, 250, 220, 270] }
+    ]
+  },
+
+{
+  "decision": "OUT",
+  "confidence": 0.82,
+  "predicted_trajectory": [
+    {"x": 0.45, "y": 0.9, "z": 0.3, "t": 0.01},
+    {"x": 0.46, "y": 0.85, "z": 0.4, "t": 0.02}
+  ],
+  "impact_location": {"x": 0.6, "y": 0.9, "z": 0.3},
+  "bounce_point": {"x": 0.3, "y": 0.5, "z": 0.0, "t": 0.005},
+  "swing_characteristics": {
+    "lateral_movement": 0.1,
+    "direction": "right-to-left",
+    "rate": 0.15,
+    "type": "conventional"
+  }
+},
+
+  {
+  "decision_reason": "Ball projected to hit the stumps (100.0% overlap) no significant swing",
+  "final_decision": "Out",
+  "timestamp": "2025-05-03T06:44:00.961750",
+  "trajectory_summary": {
+    "closest_to_stumps": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.71
+    },
+    "final_point": {
+      "t": 0.8,
+      "x": 0.02,
+      "y": 0.02,
+      "z": 0.71
+    },
+    "initial_point": {
+      "t": 0.0,
+      "x": 0.3,
+      "y": 1.5,
+      "z": 1.0
+    },
+    "stump_hit_prediction": true
+  },
+  "visual_decision": {
+    "decision_overlay_color": "red",
+    "highlight_miss_zone": false,
+    "highlight_path": true
+  }
+}
+]
