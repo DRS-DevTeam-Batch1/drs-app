@@ -1,3 +1,4 @@
+import utils.session
 import requests
 import json
 import os
