@@ -1,3 +1,4 @@
+import utils.session
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,12 +33,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "cricket_outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Try to mount the static directories
+# Trying to mount the static directories
 try:
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-    app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+    app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="output")
 except Exception as e:
-    print(f"Warning: Could not mount static directories: {e}")
+    print(f"Warning: Could not mount the static directories: {e}")
 
 @app.get("/")
 async def root():
